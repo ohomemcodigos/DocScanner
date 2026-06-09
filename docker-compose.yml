@@ -1,0 +1,10 @@
+services:
+  docscanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docscanner:latest
+    container_name: docscanner_web
+    ports:
+      - "8080:80"
+    restart: unless-stopped

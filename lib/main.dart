@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:provider/provider.dart';
 import 'provedores/documentos_provider.dart';
 import 'telas/tela_inicio.dart';
@@ -20,6 +21,14 @@ void main() {
       child: const DocScannerApp(),
     ),
   );
+=======
+import 'telas/tela_inicio.dart';
+import 'telas/tela_documentos.dart';
+import 'telas/tela_mais.dart';
+
+void main() {
+  runApp(const DocScannerApp());
+>>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
 }
 
 class DocScannerApp extends StatelessWidget {
@@ -27,6 +36,7 @@ class DocScannerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     final isDark = context.watch<DocumentosProvider>().isDarkMode;
 
     return MaterialApp(
@@ -46,6 +56,15 @@ class DocScannerApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF121212),
         colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF2E6AD4), brightness: Brightness.dark),
+=======
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'DocScanner',
+      theme: ThemeData(
+        primaryColor: const Color(0xFF2E6AD4),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E6AD4)),
+        fontFamily: 'Roboto',
+>>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
       ),
       home: const TelaPrincipal(),
     );
@@ -62,6 +81,7 @@ class TelaPrincipal extends StatefulWidget {
 class _TelaPrincipalState extends State<TelaPrincipal> {
   int _abaSelecionada = 0;
 
+<<<<<<< HEAD
   late final List<Widget> _telas = [
     TelaInicio(onNavigateTab: (index) {
       setState(() {
@@ -71,13 +91,22 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
     const TelaDocumentos(),
     const TelaFerramentas(),
     const TelaMais(),
+=======
+  final List<Widget> _telas = const [
+    TelaInicio(),
+    TelaDocumentos(),
+    TelaMais(),
+>>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
   ];
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     final isDark = context.watch<DocumentosProvider>().isDarkMode;
     final navColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
 
+=======
+>>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
     return Scaffold(
       body: IndexedStack(
         index: _abaSelecionada,
@@ -85,25 +114,40 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
+<<<<<<< HEAD
           color: navColor,
           boxShadow: [
             BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 12,
                 offset: const Offset(0, -4))
+=======
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -4),
+            ),
+>>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
           ],
         ),
         child: BottomNavigationBar(
           currentIndex: _abaSelecionada,
+<<<<<<< HEAD
           onTap: (i) {
             setState(() {
               _abaSelecionada = i;
             });
           },
+=======
+          onTap: (i) => setState(() => _abaSelecionada = i),
+>>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.transparent,
           elevation: 0,
           selectedItemColor: const Color(0xFF2E6AD4),
+<<<<<<< HEAD
           unselectedItemColor:
               isDark ? Colors.grey[500] : const Color(0xFF8E8E93),
           selectedLabelStyle:
@@ -126,6 +170,30 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                 icon: Icon(Icons.more_horiz),
                 activeIcon: Icon(Icons.more_horiz),
                 label: 'Mais'),
+=======
+          unselectedItemColor: const Color(0xFF8E8E93),
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: const TextStyle(fontSize: 12),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Início',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.folder_outlined),
+              activeIcon: Icon(Icons.folder),
+              label: 'Documentos',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.more_horiz),
+              activeIcon: Icon(Icons.more_horiz),
+              label: 'Mais',
+            ),
+>>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
           ],
         ),
       ),

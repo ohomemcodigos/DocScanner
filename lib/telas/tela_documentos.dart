@@ -32,20 +32,23 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
-        isScrollControlled: true, // Permite que o menu se adapte ao tamanho da tela
+        isScrollControlled:
+            true, // Permite que o menu se adapte ao tamanho da tela
         builder: (context) {
           return StatefulBuilder(
               builder: (BuildContext context, StateSetter setModalState) {
             bool todosAtivos = _filtros.values.every((v) => v);
             final isDark = context.read<DocumentosProvider>().isDarkMode;
-            
+
             // SUBSTITUÍDO: Usamos Material em vez de Container para o Ripple Effect funcionar
             return Material(
               color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-                child: SingleChildScrollView( // EVITA O OVERFLOW DE 38 PIXELS
+                child: SingleChildScrollView(
+                  // EVITA O OVERFLOW DE 38 PIXELS
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,7 +57,8 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Filtrar por formato',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () => Navigator.pop(context),
@@ -64,7 +68,8 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                       const SizedBox(height: 16),
                       CheckboxListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Selecionar Todos', style: TextStyle(fontWeight: FontWeight.w600)),
+                        title: const Text('Selecionar Todos',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
                         value: todosAtivos,
                         activeColor: const Color(0xFF2E6AD4),
                         onChanged: (val) {
@@ -74,10 +79,12 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                           setState(() {});
                         },
                       ),
-                      Divider(color: isDark ? Colors.grey[800] : Colors.grey[200]),
+                      Divider(
+                          color: isDark ? Colors.grey[800] : Colors.grey[200]),
                       ..._filtros.keys.map((tipo) => CheckboxListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: Text(tipo.toUpperCase(), style: const TextStyle(fontSize: 15)),
+                            title: Text(tipo.toUpperCase(),
+                                style: const TextStyle(fontSize: 15)),
                             value: _filtros[tipo],
                             activeColor: const Color(0xFF2E6AD4),
                             onChanged: (val) {
@@ -98,67 +105,71 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
 
   void _abrirModalOpcoes(BuildContext context) {
     showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true, // Permite adaptação do menu
-      builder: (context) {
-        final isDark = context.read<DocumentosProvider>().isDarkMode;
-        
-        // SUBSTITUÍDO: Usamos Material em vez de Container aqui também
-        return Material(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: SingleChildScrollView( // EVITA OVERFLOW
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40, height: 4,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(4)
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true, // Permite adaptação do menu
+        builder: (context) {
+          final isDark = context.read<DocumentosProvider>().isDarkMode;
+
+          // SUBSTITUÍDO: Usamos Material em vez de Container aqui também
+          return Material(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              child: SingleChildScrollView(
+                // EVITA OVERFLOW
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(4)),
                     ),
-                  ),
-                  ListTile(
-                    leading: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                            color: const Color(0xFF34C759).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.file_upload_outlined,
-                            color: Color(0xFF34C759))),
-                    title: const Text('Importar Imagens/Arquivos', style: TextStyle(fontWeight: FontWeight.w600)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _importarManual();
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  ListTile(
-                    leading: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                            color: const Color(0xFF2E6AD4).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.document_scanner_outlined,
-                            color: Color(0xFF2E6AD4))),
-                    title: const Text('Escanear Documento', style: TextStyle(fontWeight: FontWeight.w600)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _escanearNativo();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                    ListTile(
+                      leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFF34C759)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14)),
+                          child: const Icon(Icons.file_upload_outlined,
+                              color: Color(0xFF34C759))),
+                      title: const Text('Importar Imagens/Arquivos',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _importarManual();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFF2E6AD4)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14)),
+                          child: const Icon(Icons.document_scanner_outlined,
+                              color: Color(0xFF2E6AD4))),
+                      title: const Text('Escanear Documento',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _escanearNativo();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      }
-    );
+          );
+        });
   }
 
   Future<void> _escanearNativo() async {
@@ -193,7 +204,7 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'jpg', 'png']);
-        
+
     if (result != null && mounted) {
       PlatformFile file = result.files.single;
       DateTime agora = DateTime.now();
@@ -267,15 +278,20 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
               // 3. Abas (Tabs) Elegantes
               Container(
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: isDark ? Colors.grey[800]! : Colors.grey[200]!, width: 1))
-                ),
+                    border: Border(
+                        bottom: BorderSide(
+                            color:
+                                isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                            width: 1))),
                 child: const TabBar(
                   labelColor: Color(0xFF2E6AD4),
                   unselectedLabelColor: Colors.grey,
                   indicatorColor: Color(0xFF2E6AD4),
                   indicatorWeight: 3,
-                  labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+                  labelStyle:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  unselectedLabelStyle:
+                      TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
                   tabs: [
                     Tab(text: 'Todos os Arquivos'),
                     Tab(text: 'Favoritos')
@@ -287,10 +303,15 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
               Expanded(
                 child: TabBarView(
                   children: [
-                    _buildConteudo(listaFiltrada, provider.isGridView, cardColor, textColor, isDark, iconVazio: Icons.folder_open_rounded),
+                    _buildConteudo(listaFiltrada, provider.isGridView,
+                        cardColor, textColor, isDark,
+                        iconVazio: Icons.folder_open_rounded),
                     _buildConteudo(
                         listaFiltrada.where((d) => d.favorito).toList(),
-                        provider.isGridView, cardColor, textColor, isDark,
+                        provider.isGridView,
+                        cardColor,
+                        textColor,
+                        isDark,
                         vaziaMsg: 'Você ainda não possui favoritos.',
                         iconVazio: Icons.star_border_rounded),
                   ],
@@ -334,12 +355,14 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       height: 48,
       decoration: BoxDecoration(
-        color: const Color(0xFF1A3A6B),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: const Color(0xFF1A3A6B).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))
-        ]
-      ),
+          color: const Color(0xFF1A3A6B),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+                color: const Color(0xFF1A3A6B).withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4))
+          ]),
       child: Row(
         children: [
           IconButton(
@@ -350,10 +373,14 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                 });
               }),
           Text('${_selecionados.length} selecionados',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14)),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.visibility_off, color: Colors.white70, size: 20),
+            icon: const Icon(Icons.visibility_off,
+                color: Colors.white70, size: 20),
             tooltip: 'Ocultar documento',
             onPressed: () {
               provider.ocultarDocumentos(_selecionados);
@@ -361,17 +388,50 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                 _selecionados.clear();
               });
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Documentos ocultados com sucesso.')),
+                const SnackBar(
+                    content: Text('Documentos ocultados com sucesso.')),
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.delete, color: Color(0xFFFF4B4B), size: 20),
             onPressed: () {
-              provider.removerDocumentos(_selecionados);
-              setState(() {
-                _selecionados.clear();
-              });
+              // Em vez de excluir direto, abrimos o alerta
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Excluir Documentos',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  content: Text(
+                    'Tem certeza que deseja excluir ${_selecionados.length} documento(s)?\n\nIsso apagará os arquivos fisicamente do seu dispositivo e não poderá ser desfeito.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancelar',
+                          style: TextStyle(color: Colors.grey)),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        provider.removerDocumentos(_selecionados,
+                            excluirDoDispositivo: true);
+                        setState(() {
+                          _selecionados.clear();
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Arquivos excluídos com sucesso.')),
+                        );
+                      },
+                      child: const Text('Excluir',
+                          style: TextStyle(
+                              color: Color(0xFFFF4B4B),
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ],
@@ -379,32 +439,40 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
     );
   }
 
-  Widget _buildFerramentasRow(DocumentosProvider provider, bool isDark, Color textColor) {
+  Widget _buildFerramentasRow(
+      DocumentosProvider provider, bool isDark, Color textColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
           ActionChip(
             label: const Row(children: [
-              Text('Tipos', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text('Tipos',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               SizedBox(width: 4),
               Icon(Icons.keyboard_arrow_down, size: 16)
             ]),
-            backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.grey[200],
+            backgroundColor:
+                isDark ? const Color(0xFF2C2C2E) : Colors.grey[200],
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20), side: BorderSide.none),
             onPressed: _abrirFiltros,
           ),
           const Spacer(),
           IconButton(
               icon: Icon(
-                  provider.isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-                  color: Colors.grey[500], size: 22),
+                  provider.isGridView
+                      ? Icons.view_list_rounded
+                      : Icons.grid_view_rounded,
+                  color: Colors.grey[500],
+                  size: 22),
               onPressed: () => provider.toggleLayout()),
           PopupMenuButton<String>(
             icon: Icon(Icons.sort_rounded, color: Colors.grey[500], size: 22),
             onSelected: (val) => provider.ordenarPor(val),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'hora', child: Text('Mais Recentes')),
               const PopupMenuItem(value: 'az', child: Text('Nome (A - Z)')),
@@ -418,18 +486,20 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
 
   Widget _buildConteudo(List<Documento> docs, bool isGrid, Color cardColor,
       Color textColor, bool isDark,
-      {String vaziaMsg = 'Nenhum arquivo encontrado.', required IconData iconVazio}) {
+      {String vaziaMsg = 'Nenhum arquivo encontrado.',
+      required IconData iconVazio}) {
     if (docs.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(iconVazio, size: 64, color: isDark ? Colors.grey[800] : Colors.grey[300]),
-            const SizedBox(height: 16),
-            Text(vaziaMsg, style: TextStyle(color: Colors.grey[500], fontSize: 15)),
-          ],
-        )
-      );
+          child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(iconVazio,
+              size: 64, color: isDark ? Colors.grey[800] : Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(vaziaMsg,
+              style: TextStyle(color: Colors.grey[500], fontSize: 15)),
+        ],
+      ));
     }
     if (isGrid) {
       return GridView.builder(
@@ -456,7 +526,7 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
   Widget _buildCard(Documento doc, Color cardColor, Color textColor,
       {required bool isGrid, required bool isDark}) {
     bool isSel = _selecionados.contains(doc.id);
-    
+
     return GestureDetector(
       onLongPress: () {
         setState(() {
@@ -475,10 +545,12 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: isGrid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
-        padding: isGrid ? const EdgeInsets.all(12) : const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        padding: isGrid
+            ? const EdgeInsets.all(12)
+            : const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-            color: isSel 
-                ? const Color(0xFF2E6AD4).withValues(alpha: 0.08) 
+            color: isSel
+                ? const Color(0xFF2E6AD4).withValues(alpha: 0.08)
                 : cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -486,15 +558,20 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                     ? const Color(0xFF2E6AD4)
                     : (isDark ? Colors.grey[800]! : Colors.transparent),
                 width: isSel ? 2 : 1),
-            boxShadow: (!isDark && !isSel) ? [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))
-            ] : []
-        ),
+            boxShadow: (!isDark && !isSel)
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2))
+                  ]
+                : []),
         child: isGrid
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  MiniaturaDocumento(doc: doc, isDark: isDark, largura: 54, altura: 68),
+                  MiniaturaDocumento(
+                      doc: doc, isDark: isDark, largura: 54, altura: 68),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -512,7 +589,9 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                             .read<DocumentosProvider>()
                             .alternarFavorito(doc.id),
                         child: Icon(
-                          doc.favorito ? Icons.star_rounded : Icons.star_border_rounded,
+                          doc.favorito
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
                           color: doc.favorito ? Colors.amber : Colors.grey[400],
                           size: 20,
                         ),
@@ -523,13 +602,15 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(doc.tamanho,
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                        style:
+                            TextStyle(color: Colors.grey[500], fontSize: 12)),
                   ),
                 ],
               )
             : Row(
                 children: [
-                  MiniaturaDocumento(doc: doc, isDark: isDark, largura: 48, altura: 60),
+                  MiniaturaDocumento(
+                      doc: doc, isDark: isDark, largura: 48, altura: 60),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -539,10 +620,13 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                                color: textColor, fontSize: 15, fontWeight: FontWeight.w600)),
+                                color: textColor,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
                         Text('${doc.data} • ${doc.tamanho}',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+                            style: TextStyle(
+                                color: Colors.grey[500], fontSize: 13)),
                       ],
                     ),
                   ),
@@ -551,7 +635,9 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                     children: [
                       IconButton(
                         icon: Icon(
-                          doc.favorito ? Icons.star_rounded : Icons.star_border_rounded,
+                          doc.favorito
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
                           color: doc.favorito ? Colors.amber : Colors.grey[400],
                         ),
                         onPressed: () => context
@@ -561,7 +647,8 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                       if (isSel)
                         const Padding(
                           padding: EdgeInsets.only(right: 8.0),
-                          child: Icon(Icons.check_circle, color: Color(0xFF2E6AD4)),
+                          child: Icon(Icons.check_circle,
+                              color: Color(0xFF2E6AD4)),
                         ),
                     ],
                   ),

@@ -45,10 +45,12 @@ class TelaMais extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              provider.alternarPermissaoArquivos(false); // Dispara a limpeza no SQLite
+              provider.alternarPermissaoArquivos(
+                  false); // Dispara a limpeza no SQLite
             },
             child: const Text('Desativar',
-                style: TextStyle(color: Color(0xFFFF4B4B), fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: Color(0xFFFF4B4B), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -117,7 +119,7 @@ class TelaMais extends StatelessWidget {
                             style: TextStyle(
                                 fontSize: 12, color: Colors.grey[500])),
                         trailing: Switch(
-                          activeThumbColor: const Color(0xFF2E6AD4),
+                          activeColor: const Color(0xFF2E6AD4),
                           value: provider.permissaoAcessoArquivos,
                           onChanged: (val) {
                             if (val) {
@@ -154,7 +156,7 @@ class TelaMais extends StatelessWidget {
                             style: TextStyle(
                                 fontSize: 12, color: Colors.grey[500])),
                         trailing: Switch(
-                          activeThumbColor: const Color(0xFF2E6AD4),
+                          activeColor: const Color(0xFF2E6AD4),
                           value: provider.isDarkMode,
                           onChanged: (val) => provider.toggleTheme(),
                         ),

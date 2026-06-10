@@ -10,7 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-<<<<<<< HEAD
   file_picker: ^8.3.7
   open_filex: ^4.4.0
   intl: ^0.20.2
@@ -21,27 +20,17 @@ dependencies:
   pdfx: ^2.5.0
   sqflite: ^2.3.0
   path_provider: ^2.1.2
-=======
->>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-<<<<<<< HEAD
   flutter_lints: ^6.0.0
-=======
-  flutter_lints: ^4.0.0
->>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
 
 flutter:
 
   uses-material-design: true
   assets:
-<<<<<<< HEAD
   #  - assets/logo.png
-=======
-    - assets/logo.png
->>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0
   # assets (outros):
   #  - images/a_dot_burr.jpeg
   #  - images/a_dot_ham.jpeg
@@ -56,10 +45,6 @@ flutter:
   #       - asset: fonts/TrajanPro.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
-<<<<<<< HEAD
 
-# ADICIONE ISTO AQUI NO FINAL:
 dependency_overrides:
   flutter_plugin_android_lifecycle: 2.0.22
-=======
->>>>>>> 5acf77e61b9b720182375e2a4594b0e12d41ece0

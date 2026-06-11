@@ -15,7 +15,7 @@ Existem duas formas principais de começar a utilizar o DocScanner:
 
 Se deseja apenas utilizar o aplicativo no seu dispositivo Android, pode baixar a versão mais recente diretamente da nossa página de releases:
 
-**[Instalar o APK - GitHub Releases](https://github.com/ohomemcodigos/DocScanner/releases)**
+**[Instalar o APK (Android APENAS) - GitHub Releases](https://github.com/ohomemcodigos/DocScanner/releases)**
 
 ### 2. Instalação via Código-Fonte (Para desenvolvedores)
 

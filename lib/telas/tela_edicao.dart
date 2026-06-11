@@ -3,110 +3,102 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../provedores/documentos_provider.dart';
 
-class TelaEdicao extends StatelessWidget {
+class TelaEdicao extends StatefulWidget {
   final String documentoId;
   const TelaEdicao({super.key, required this.documentoId});
 
   @override
+  State<TelaEdicao> createState() => _TelaEdicaoState();
+}
+
+class _TelaEdicaoState extends State<TelaEdicao> {
+  late TextEditingController _nomeController;
+
+  @override
+  void initState() {
+    super.initState();
+    final doc = context.read<DocumentosProvider>().documentos.firstWhere((d) => d.id == widget.documentoId);
+    _nomeController = TextEditingController(text: doc.nome);
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final doc = context
-        .read<DocumentosProvider>()
-        .documentos
-        .firstWhere((d) => d.id == documentoId);
+    final doc = context.read<DocumentosProvider>().documentos.firstWhere((d) => d.id == widget.documentoId);
     final isDark = context.watch<DocumentosProvider>().isDarkMode;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF121212)
-          : const Color(0xFF1E1E1E), // Fundo escuro focado na edição
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFF1E1E1E),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Text('Editar: ${doc.nome}',
-            style: const TextStyle(color: Colors.white, fontSize: 16)),
+        title: const Text('Renomear Documento', style: TextStyle(color: Colors.white, fontSize: 16)),
         actions: [
           TextButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Alterações guardadas.')));
-              Navigator.pop(context);
+            onPressed: () async {
+              if (_nomeController.text.trim().isNotEmpty) {
+                await context.read<DocumentosProvider>().renomearDocumento(doc.id, _nomeController.text.trim());
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Documento renomeado com sucesso.')));
+                  Navigator.pop(context);
+                }
+              }
             },
-            child: const Text('Concluir',
-                style: TextStyle(
-                    color: Color(0xFF00C48C), fontWeight: FontWeight.bold)),
+            child: const Text('Salvar', style: TextStyle(color: Color(0xFF00C48C), fontWeight: FontWeight.bold)),
           )
         ],
       ),
       body: Column(
         children: [
-          // Área de Preview Central
           Expanded(
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Hero(
                   tag: 'preview_${doc.id}',
-                  child: doc.caminho != null &&
-                          ['jpg', 'png'].contains(doc.extensao)
+                  child: doc.caminho != null && ['jpg', 'png'].contains(doc.extensao)
                       ? Image.file(File(doc.caminho!))
                       : Container(
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.all(40),
-                          child: Icon(Icons.picture_as_pdf,
-                              size: 80, color: Colors.grey[300]),
+                          child: Icon(Icons.picture_as_pdf, size: 80, color: Colors.grey[300]),
                         ),
                 ),
               ),
             ),
           ),
-
-          // Barra de Ferramentas Inferior
           Container(
-            height: 100,
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.black87,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.black87,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildFerramenta(Icons.auto_awesome, 'Filtros\n(Em breve)', () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                          'A integração com OpenCV_Dart será feita aqui.')));
-                }),
-                _buildFerramenta(Icons.crop, 'Cortar', () {}),
-                _buildFerramenta(Icons.rotate_right, 'Rodar', () {}),
-                _buildFerramenta(Icons.library_add, 'Nova pág.', () {}),
-                _buildFerramenta(Icons.photo_library, 'Importar\nLote', () {}),
-                _buildFerramenta(Icons.delete_outline, 'Apagar', () {},
-                    color: const Color(0xFFFF4B4B)),
+                const Text('Nome do Arquivo', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _nomeController,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
+                ),
+                const SizedBox(height: 32),
               ],
             ),
           )
         ],
-      ),
-    );
-  }
-
-  Widget _buildFerramenta(IconData icon, String label, VoidCallback onTap,
-      {Color color = Colors.white}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 8),
-            Text(label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: color.withValues(alpha: 0.8), fontSize: 10)),
-          ],
-        ),
       ),
     );
   }

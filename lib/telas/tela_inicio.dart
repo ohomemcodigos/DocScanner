@@ -9,6 +9,7 @@ import '../provedores/documentos_provider.dart';
 import '../widgets/barra_pesquisa.dart';
 import '../widgets/miniatura_documento.dart';
 import 'tela_edicao.dart';
+import 'package:share_plus/share_plus.dart';
 
 class TelaInicio extends StatefulWidget {
   final Function(int)? onNavigateTab;
@@ -431,8 +432,11 @@ class _TelaInicioState extends State<TelaInicio> {
             Row(
               children: [
                 Expanded(
-                    child:
-                        _buildCardButton('Compartilhar', isDark, onTap: () {})),
+                    child: _buildCardButton('Compartilhar', isDark, onTap: () async {
+                  if (doc.caminho != null) {
+                    final arquivo = XFile(doc.caminho!);
+                    await SharePlus.instance.share(ShareParams(files: [arquivo], text: doc.nome));                  }
+                })),
                 const SizedBox(width: 8),
                 Expanded(
                     child: _buildCardButton('Editar', isDark, highlight: true,

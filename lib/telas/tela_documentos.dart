@@ -9,6 +9,7 @@ import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart
 import '../provedores/documentos_provider.dart';
 import '../widgets/barra_pesquisa.dart';
 import '../widgets/miniatura_documento.dart';
+import 'package:share_plus/share_plus.dart';
 
 class TelaDocumentos extends StatefulWidget {
   const TelaDocumentos({super.key});
@@ -379,6 +380,16 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                   fontSize: 14)),
           const Spacer(),
           IconButton(
+            icon: const Icon(Icons.share, color: Colors.white, size: 20),
+            onPressed: () async {
+              final docs = provider.documentos.where((d) => _selecionados.contains(d.id) && d.caminho != null).toList();
+              if (docs.isNotEmpty) {
+                final arquivos = docs.map((d) => XFile(d.caminho!)).toList();
+                await SharePlus.instance.share(ShareParams(files: arquivos));
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.visibility_off,
                 color: Colors.white70, size: 20),
             tooltip: 'Ocultar documento',
@@ -438,7 +449,7 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
       ),
     );
   }
-
+  
   Widget _buildFerramentasRow(
       DocumentosProvider provider, bool isDark, Color textColor) {
     return Padding(

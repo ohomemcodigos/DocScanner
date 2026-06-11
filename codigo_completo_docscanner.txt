@@ -1,0 +1,2639 @@
+=== CÓDIGO COMPLETO DOCSCANNER ===
+
+
+============================================================
+ARQUIVO: .\analysis_options.yaml
+============================================================
+
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at https://dart.dev/lints.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+
+
+============================================================
+ARQUIVO: .\pubspec.yaml
+============================================================
+
+name: docscanner
+description: A new Flutter project.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  file_picker: ^8.3.7
+  open_filex: ^4.4.0
+  intl: ^0.20.2
+  local_auth: ^2.3.0
+  google_mlkit_document_scanner: ^0.4.1
+  provider: ^6.1.2
+  permission_handler: ^12.0.3
+  pdfx: ^2.5.0
+  sqflite: ^2.3.0
+  path_provider: ^2.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+
+  uses-material-design: true
+  assets:
+  #  - assets/logo.png
+  # assets (outros):
+  #  - images/a_dot_burr.jpeg
+  #  - images/a_dot_ham.jpeg
+  # fonts:
+  #   - family: Schyler
+  #     fonts:
+  #       - asset: fonts/Schyler-Regular.ttf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+  #   - family: Trajan Pro
+  #     fonts:
+  #       - asset: fonts/TrajanPro.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+
+dependency_overrides:
+  flutter_plugin_android_lifecycle: 2.0.22
+
+
+============================================================
+ARQUIVO: .\README.md
+============================================================
+
+# docscanner
+
+A new Flutter project created with FlutLab - https://flutlab.io
+
+## Getting Started
+
+A few resources to get you started if this is your first Flutter project:
+
+- https://flutter.dev/docs/get-started/codelab
+- https://flutter.dev/docs/cookbook
+
+For help getting started with Flutter, view our
+https://flutter.dev/docs, which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
+
+## Getting Started: FlutLab - Flutter Online IDE
+
+- How to use FlutLab? Please, view our https://flutlab.io/docs
+- Join the discussion and conversation on https://flutlab.io/residents
+
+
+============================================================
+ARQUIVO: .\lib\main.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'provedores/documentos_provider.dart';
+import 'telas/tela_inicio.dart';
+import 'telas/tela_documentos.dart';
+import 'telas/tela_ferramentas.dart';
+import 'telas/tela_mais.dart';
+
+void main() {
+  // 1. Esta linha é OBRIGATÓRIA quando usamos pacotes nativos (Câmera, PDF, Permissões, Biometria).
+  // Ela garante que o motor do Flutter "acorde" antes da interface.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  runApp(
+    ChangeNotifierProvider(
+      // 2. Removido o varrer automático da inicialização.
+      // Agora o app abre "vazio", respeitando a privacidade.
+      // Ele só lerá o celular quando o usuário ativar na aba "Mais".
+      create: (context) => DocumentosProvider(),
+      child: const DocScannerApp(),
+    ),
+  );
+}
+
+class DocScannerApp extends StatelessWidget {
+  const DocScannerApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<DocumentosProvider>().isDarkMode;
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'DocScanner',
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: const Color(0xFF2E6AD4),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF2E6AD4), brightness: Brightness.light),
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF2E6AD4),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF2E6AD4), brightness: Brightness.dark),
+      ),
+      home: const TelaPrincipal(),
+    );
+  }
+}
+
+class TelaPrincipal extends StatefulWidget {
+  const TelaPrincipal({super.key});
+
+  @override
+  State<TelaPrincipal> createState() => _TelaPrincipalState();
+}
+
+class _TelaPrincipalState extends State<TelaPrincipal> {
+  int _abaSelecionada = 0;
+
+  late final List<Widget> _telas = [
+    TelaInicio(onNavigateTab: (index) {
+      setState(() {
+        _abaSelecionada = index;
+      });
+    }),
+    const TelaDocumentos(),
+    const TelaFerramentas(),
+    const TelaMais(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<DocumentosProvider>().isDarkMode;
+    final navColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+
+    return Scaffold(
+      body: IndexedStack(
+        index: _abaSelecionada,
+        children: _telas,
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: navColor,
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 12,
+                offset: const Offset(0, -4))
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _abaSelecionada,
+          onTap: (i) {
+            setState(() {
+              _abaSelecionada = i;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          selectedItemColor: const Color(0xFF2E6AD4),
+          unselectedItemColor:
+              isDark ? Colors.grey[500] : const Color(0xFF8E8E93),
+          selectedLabelStyle:
+              const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          unselectedLabelStyle: const TextStyle(fontSize: 12),
+          items: const [
+            BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'Início'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.folder_outlined),
+                activeIcon: Icon(Icons.folder),
+                label: 'Arquivos'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.grid_view),
+                activeIcon: Icon(Icons.grid_view_rounded),
+                label: 'Ferramentas'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.more_horiz),
+                activeIcon: Icon(Icons.more_horiz),
+                label: 'Mais'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+============================================================
+ARQUIVO: .\lib\banco\database_helper.dart
+============================================================
+
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import '../provedores/documentos_provider.dart';
+
+class DatabaseHelper {
+  static final DatabaseHelper instance = DatabaseHelper._init();
+  static Database? _database;
+
+  DatabaseHelper._init();
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDB('docscanner.db');
+    return _database!;
+  }
+
+  Future<Database> _initDB(String filePath) async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = join(documentsDirectory.path, filePath);
+
+    return await openDatabase(
+      path,
+      version: 2, // Aumentámos a versão para 2
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB, // Adicionámos o script de atualização
+    );
+  }
+
+  Future _createDB(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE documentos (
+        id TEXT PRIMARY KEY,
+        nome TEXT NOT NULL,
+        data TEXT NOT NULL,
+        tamanho TEXT NOT NULL,
+        caminho TEXT,
+        extensao TEXT NOT NULL,
+        favorito INTEGER NOT NULL,
+        importadoManualmente INTEGER NOT NULL,
+        dataReal INTEGER NOT NULL,
+        oculto INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+  }
+
+  // Se o utilizador já tiver o app instalado (v1), isto atualiza a tabela sem apagar dados
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE documentos ADD COLUMN oculto INTEGER NOT NULL DEFAULT 0');
+    }
+  }
+
+  Future<void> inserirDocumento(Documento doc) async {
+    final db = await instance.database;
+    await db.insert(
+      'documentos',
+      {
+        'id': doc.id,
+        'nome': doc.nome,
+        'data': doc.data,
+        'tamanho': doc.tamanho,
+        'caminho': doc.caminho,
+        'extensao': doc.extensao,
+        'favorito': doc.favorito ? 1 : 0,
+        'importadoManualmente': doc.importadoManualmente ? 1 : 0,
+        'dataReal': doc.dataReal.millisecondsSinceEpoch,
+        'oculto': doc.oculto ? 1 : 0,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Documento>> lerTodosDocumentos() async {
+    final db = await instance.database;
+    final result = await db.query('documentos', orderBy: 'dataReal DESC');
+
+    return result.map((json) => Documento(
+      id: json['id'] as String,
+      nome: json['nome'] as String,
+      data: json['data'] as String,
+      tamanho: json['tamanho'] as String,
+      caminho: json['caminho'] as String?,
+      extensao: json['extensao'] as String,
+      favorito: (json['favorito'] as int) == 1,
+      importadoManualmente: (json['importadoManualmente'] as int) == 1,
+      dataReal: DateTime.fromMillisecondsSinceEpoch(json['dataReal'] as int),
+      oculto: (json['oculto'] != null && json['oculto'] as int == 1),
+    )).toList();
+  }
+
+  Future<void> deletarDocumento(String id) async {
+    final db = await instance.database;
+    await db.delete('documentos', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> atualizarFavorito(String id, bool favorito) async {
+    final db = await instance.database;
+    await db.update('documentos', {'favorito': favorito ? 1 : 0}, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> atualizarNome(String id, String novoNome) async {
+    final db = await instance.database;
+    await db.update('documentos', {'nome': novoNome}, where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Novo método para ocultar ou restaurar no banco de dados
+  Future<void> atualizarOculto(String id, bool oculto) async {
+    final db = await instance.database;
+    await db.update('documentos', {'oculto': oculto ? 1 : 0}, where: 'id = ?', whereArgs: [id]);
+  }
+}
+
+============================================================
+ARQUIVO: .\lib\provedores\documentos_provider.dart
+============================================================
+
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:permission_handler/permission_handler.dart';
+import '../banco/database_helper.dart';
+
+class Documento {
+  final String id;
+  String nome;
+  final String data;
+  final String tamanho;
+  final String? caminho;
+  final Uint8List? bytes;
+  final String extensao;
+  bool favorito;
+  bool importadoManualmente;
+  DateTime dataReal;
+  bool oculto;
+
+  Documento({
+    required this.id,
+    required this.nome,
+    required this.data,
+    required this.tamanho,
+    this.caminho,
+    this.bytes,
+    required this.extensao,
+    this.favorito = false,
+    this.importadoManualmente = true,
+    required this.dataReal,
+    this.oculto = false, // Valor padrão deve ser falso
+  });
+}
+
+class DocumentosProvider extends ChangeNotifier {
+  final List<Documento> _documentos = [];
+  bool _isDarkMode = false;
+  bool _isGridView = false;
+  bool _permissaoAcessoArquivos = false;
+
+  DocumentosProvider() {
+    _inicializarDados();
+  }
+
+  bool get isDarkMode => _isDarkMode;
+  bool get isGridView => _isGridView;
+  bool get permissaoAcessoArquivos => _permissaoAcessoArquivos;
+
+  // O getter agora filtra o que a interface consegue "enxergar", ignorando os ocultos
+  List<Documento> get documentos =>
+      _documentos.where((d) => !d.oculto).toList();
+
+  Future<void> _inicializarDados() async {
+    if (!kIsWeb) {
+      final docsSalvos = await DatabaseHelper.instance.lerTodosDocumentos();
+
+      // Revogação Passiva: Verifica se o usuário tirou a permissão nas Configurações do Android
+      _permissaoAcessoArquivos = await Permission.storage.isGranted ||
+          await Permission.manageExternalStorage.isGranted;
+
+      if (!_permissaoAcessoArquivos) {
+        // Se o app iniciar sem permissão, carrega apenas os que tiveram input explícito (manuais)
+        _documentos.addAll(docsSalvos.where((d) => d.importadoManualmente));
+
+        // Limpa do banco de dados qualquer arquivo que tenha ficado órfão da varredura anterior
+        final autoDocs =
+            docsSalvos.where((d) => !d.importadoManualmente).toList();
+        for (var doc in autoDocs) {
+          await DatabaseHelper.instance.deletarDocumento(doc.id);
+        }
+      } else {
+        _documentos.addAll(docsSalvos);
+      }
+
+      notifyListeners();
+    }
+  }
+
+  void toggleTheme() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
+  }
+
+  void toggleLayout() {
+    _isGridView = !_isGridView;
+    notifyListeners();
+  }
+
+  Future<void> alternarPermissaoArquivos(bool conceder) async {
+    if (kIsWeb) {
+      _permissaoAcessoArquivos = false;
+      notifyListeners();
+      return;
+    }
+
+    if (conceder) {
+      if (await Permission.storage.request().isGranted ||
+          await Permission.manageExternalStorage.request().isGranted) {
+        _permissaoAcessoArquivos = true;
+        await varrerDocumentosLocais();
+      } else {
+        _permissaoAcessoArquivos = false;
+      }
+    } else {
+      _permissaoAcessoArquivos = false;
+
+      // Revogação Ativa: Usuário renegou o acesso no APP. Esquecer tudo que não foi manual.
+      final idsParaRemover = _documentos
+          .where((doc) => !doc.importadoManualmente)
+          .map((doc) => doc.id)
+          .toSet();
+
+      // Remove da interface
+      _documentos.removeWhere((doc) => !doc.importadoManualmente);
+
+      // Remove do banco de dados para proteger a privacidade
+      for (var id in idsParaRemover) {
+        await DatabaseHelper.instance.deletarDocumento(id);
+      }
+    }
+    notifyListeners();
+  }
+
+  // Novo método: Ocultar
+  Future<void> ocultarDocumentos(Set<String> ids) async {
+    for (var doc in _documentos) {
+      if (ids.contains(doc.id)) {
+        doc.oculto = true;
+        if (!kIsWeb) {
+          await DatabaseHelper.instance.atualizarOculto(doc.id, true);
+        }
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> adicionarDocumento(Documento doc) async {
+    // Restaurar Ocultos: Verifica se este caminho já existe no nosso ecossistema
+    final index = _documentos
+        .indexWhere((d) => d.caminho != null && d.caminho == doc.caminho);
+
+    if (index != -1) {
+      // O ficheiro já existe. Se estava oculto, o utilizador está a pedir para o trazer de volta à vida.
+      if (_documentos[index].oculto) {
+        _documentos[index].oculto = false;
+        _documentos[index].importadoManualmente = true;
+        notifyListeners();
+        if (!kIsWeb) {
+          await DatabaseHelper.instance
+              .atualizarOculto(_documentos[index].id, false);
+        }
+      }
+      return; // Previne que ficheiros duplicados entrem na lista
+    }
+
+    _documentos.insert(0, doc);
+    notifyListeners();
+
+    if (!kIsWeb) {
+      await DatabaseHelper.instance.inserirDocumento(doc);
+    }
+  }
+
+  Future<void> removerDocumentos(Set<String> ids,
+      {bool excluirDoDispositivo = false}) async {
+    if (!kIsWeb && excluirDoDispositivo) {
+      for (var id in ids) {
+        final doc = _documentos.firstWhere((d) => d.id == id);
+        if (doc.caminho != null) {
+          try {
+            final file = File(doc.caminho!);
+            if (await file.exists()) {
+              await file.delete(); // Deleta o arquivo físico do celular
+            }
+          } catch (e) {
+            debugPrint("Erro ao excluir arquivo físico: $e");
+          }
+        }
+      }
+    }
+
+    // Remove da interface
+    _documentos.removeWhere((doc) => ids.contains(doc.id));
+    notifyListeners();
+
+    // Remove do banco de dados SQLite
+    if (!kIsWeb) {
+      for (var id in ids) {
+        await DatabaseHelper.instance.deletarDocumento(id);
+      }
+    }
+  }
+
+  Future<void> renomearDocumento(String id, String novoNome) async {
+    final index = _documentos.indexWhere((doc) => doc.id == id);
+    if (index != -1) {
+      _documentos[index].nome = novoNome;
+      notifyListeners();
+
+      if (!kIsWeb) {
+        await DatabaseHelper.instance.atualizarNome(id, novoNome);
+      }
+    }
+  }
+
+  Future<void> alternarFavorito(String id) async {
+    final index = _documentos.indexWhere((doc) => doc.id == id);
+    if (index != -1) {
+      _documentos[index].favorito = !_documentos[index].favorito;
+      notifyListeners();
+
+      if (!kIsWeb) {
+        await DatabaseHelper.instance
+            .atualizarFavorito(id, _documentos[index].favorito);
+      }
+    }
+  }
+
+  void ordenarPor(String criterio) {
+    if (criterio == 'hora') {
+      _documentos.sort((a, b) => b.dataReal.compareTo(a.dataReal));
+    } else if (criterio == 'az') {
+      _documentos
+          .sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+    } else if (criterio == 'za') {
+      _documentos
+          .sort((a, b) => b.nome.toLowerCase().compareTo(a.nome.toLowerCase()));
+    }
+    notifyListeners();
+  }
+
+  Future<void> varrerDocumentosLocais() async {
+    if (kIsWeb) return;
+
+    List<Directory> pastas = [
+      Directory('/storage/emulated/0/Download'),
+      Directory('/storage/emulated/0/Documents'),
+    ];
+
+    for (var pasta in pastas) {
+      if (pasta.existsSync()) {
+        try {
+          var arquivos = pasta.listSync(recursive: false);
+          for (var arquivo in arquivos) {
+            if (arquivo is File) {
+              String extensao = arquivo.path.split('.').last.toLowerCase();
+
+              // Filtro Blindado: Apenas documentos válidos passam aqui. Mídias são ignoradas.
+              if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
+                  .contains(extensao)) {
+                if (!_documentos.any((d) => d.caminho == arquivo.path)) {
+                  int bytes = arquivo.lengthSync();
+                  DateTime dataModificacao = arquivo.lastModifiedSync();
+
+                  final novoDoc = Documento(
+                    id: arquivo.path,
+                    nome: arquivo.path.split('/').last,
+                    data:
+                        '${dataModificacao.day.toString().padLeft(2, '0')}/${dataModificacao.month.toString().padLeft(2, '0')}/${dataModificacao.year}',
+                    dataReal: dataModificacao,
+                    tamanho: '${(bytes / 1024 / 1024).toStringAsFixed(2)} MB',
+                    caminho: arquivo.path,
+                    extensao: extensao,
+                    importadoManualmente:
+                        false, // Flag que indica varredura automática
+                    oculto: false,
+                  );
+
+                  _documentos.add(novoDoc);
+                  await DatabaseHelper.instance.inserirDocumento(novoDoc);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint("Erro ao ler pasta: $e");
+        }
+      }
+    }
+    ordenarPor('hora');
+  }
+}
+
+
+============================================================
+ARQUIVO: .\lib\telas\tela_documentos.dart
+============================================================
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:provider/provider.dart';
+import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
+import '../provedores/documentos_provider.dart';
+import '../widgets/barra_pesquisa.dart';
+import '../widgets/miniatura_documento.dart';
+
+class TelaDocumentos extends StatefulWidget {
+  const TelaDocumentos({super.key});
+  @override
+  State<TelaDocumentos> createState() => _TelaDocumentosState();
+}
+
+class _TelaDocumentosState extends State<TelaDocumentos> {
+  final Set<String> _selecionados = {};
+  String _termoBusca = '';
+
+  final Map<String, bool> _filtros = {
+    'pdf': true,
+    'doc/docx': true,
+    'xls/xlsx': true,
+    'ppt/pptx': true,
+    'jpg/png': true,
+  };
+
+  void _abrirFiltros() {
+    showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled:
+            true, // Permite que o menu se adapte ao tamanho da tela
+        builder: (context) {
+          return StatefulBuilder(
+              builder: (BuildContext context, StateSetter setModalState) {
+            bool todosAtivos = _filtros.values.every((v) => v);
+            final isDark = context.read<DocumentosProvider>().isDarkMode;
+
+            // SUBSTITUÍDO: Usamos Material em vez de Container para o Ripple Effect funcionar
+            return Material(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                child: SingleChildScrollView(
+                  // EVITA O OVERFLOW DE 38 PIXELS
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Filtrar por formato',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold)),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Selecionar Todos',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
+                        value: todosAtivos,
+                        activeColor: const Color(0xFF2E6AD4),
+                        onChanged: (val) {
+                          setModalState(() {
+                            _filtros.updateAll((key, value) => val ?? true);
+                          });
+                          setState(() {});
+                        },
+                      ),
+                      Divider(
+                          color: isDark ? Colors.grey[800] : Colors.grey[200]),
+                      ..._filtros.keys.map((tipo) => CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(tipo.toUpperCase(),
+                                style: const TextStyle(fontSize: 15)),
+                            value: _filtros[tipo],
+                            activeColor: const Color(0xFF2E6AD4),
+                            onChanged: (val) {
+                              setModalState(() {
+                                _filtros[tipo] = val ?? false;
+                              });
+                              setState(() {});
+                            },
+                          )),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          });
+        });
+  }
+
+  void _abrirModalOpcoes(BuildContext context) {
+    showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true, // Permite adaptação do menu
+        builder: (context) {
+          final isDark = context.read<DocumentosProvider>().isDarkMode;
+
+          // SUBSTITUÍDO: Usamos Material em vez de Container aqui também
+          return Material(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              child: SingleChildScrollView(
+                // EVITA OVERFLOW
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                          color: Colors.grey[400],
+                          borderRadius: BorderRadius.circular(4)),
+                    ),
+                    ListTile(
+                      leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFF34C759)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14)),
+                          child: const Icon(Icons.file_upload_outlined,
+                              color: Color(0xFF34C759))),
+                      title: const Text('Importar Imagens/Arquivos',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _importarManual();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      leading: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: const Color(0xFF2E6AD4)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14)),
+                          child: const Icon(Icons.document_scanner_outlined,
+                              color: Color(0xFF2E6AD4))),
+                      title: const Text('Escanear Documento',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _escanearNativo();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _escanearNativo() async {
+    if (kIsWeb) return;
+    try {
+      final docScanner = DocumentScanner(
+          options: DocumentScannerOptions(
+              documentFormats: {DocumentFormat.pdf},
+              mode: ScannerMode.full,
+              isGalleryImport: true));
+      DocumentScanningResult result = await docScanner.scanDocument();
+      if (result.pdf != null && mounted) {
+        File file = File(result.pdf!.uri);
+        DateTime agora = DateTime.now();
+        context.read<DocumentosProvider>().adicionarDocumento(Documento(
+              id: agora.millisecondsSinceEpoch.toString(),
+              nome: 'Scan_${DateFormat('ddMMyy_HHmm').format(agora)}',
+              data: DateFormat('dd MMM yyyy').format(agora),
+              dataReal: agora,
+              tamanho:
+                  '${(await file.length() / 1024 / 1024).toStringAsFixed(2)} MB',
+              caminho: file.path,
+              extensao: 'pdf',
+            ));
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> _importarManual() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'jpg', 'png']);
+
+    if (result != null && mounted) {
+      PlatformFile file = result.files.single;
+      DateTime agora = DateTime.now();
+      context.read<DocumentosProvider>().adicionarDocumento(Documento(
+            id: agora.millisecondsSinceEpoch.toString(),
+            nome: file.name,
+            data: DateFormat('dd MMM yyyy').format(agora),
+            dataReal: agora,
+            tamanho: '${(file.size / 1024 / 1024).toStringAsFixed(2)} MB',
+            caminho: kIsWeb ? null : file.path,
+            bytes: kIsWeb ? file.bytes : null,
+            extensao: file.extension ?? '',
+          ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<DocumentosProvider>();
+    final isDark = provider.isDarkMode;
+    final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA);
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A3A6B);
+
+    List<Documento> listaFiltrada = provider.documentos.where((doc) {
+      if (_termoBusca.isNotEmpty &&
+          !doc.nome.toLowerCase().contains(_termoBusca.toLowerCase())) {
+        return false;
+      }
+      if (doc.extensao == 'pdf' && !_filtros['pdf']!) {
+        return false;
+      }
+      if (['doc', 'docx'].contains(doc.extensao) && !_filtros['doc/docx']!) {
+        return false;
+      }
+      if (['xls', 'xlsx'].contains(doc.extensao) && !_filtros['xls/xlsx']!) {
+        return false;
+      }
+      if (['ppt', 'pptx'].contains(doc.extensao) && !_filtros['ppt/pptx']!) {
+        return false;
+      }
+      if (['jpg', 'png', 'jpeg'].contains(doc.extensao) &&
+          !_filtros['jpg/png']!) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: bgColor,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Cabeçalho Dinâmico (Muda suavemente entre Pesquisa e Ações de Seleção)
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (Widget child, Animation<double> animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: _selecionados.isNotEmpty
+                    ? _buildContextualBar(provider)
+                    : _buildHeaderPesquisa(isDark, cardColor),
+              ),
+
+              // 2. Barra de Ferramentas (Filtros, Grid/List, Ordernar)
+              _buildFerramentasRow(provider, isDark, textColor),
+
+              // 3. Abas (Tabs) Elegantes
+              Container(
+                decoration: BoxDecoration(
+                    border: Border(
+                        bottom: BorderSide(
+                            color:
+                                isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                            width: 1))),
+                child: const TabBar(
+                  labelColor: Color(0xFF2E6AD4),
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: Color(0xFF2E6AD4),
+                  indicatorWeight: 3,
+                  labelStyle:
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  unselectedLabelStyle:
+                      TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+                  tabs: [
+                    Tab(text: 'Todos os Arquivos'),
+                    Tab(text: 'Favoritos')
+                  ],
+                ),
+              ),
+
+              // 4. Conteúdo (A Lista/Grelha)
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    _buildConteudo(listaFiltrada, provider.isGridView,
+                        cardColor, textColor, isDark,
+                        iconVazio: Icons.folder_open_rounded),
+                    _buildConteudo(
+                        listaFiltrada.where((d) => d.favorito).toList(),
+                        provider.isGridView,
+                        cardColor,
+                        textColor,
+                        isDark,
+                        vaziaMsg: 'Você ainda não possui favoritos.',
+                        iconVazio: Icons.star_border_rounded),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: _selecionados.isEmpty
+            ? FloatingActionButton(
+                onPressed: () => _abrirModalOpcoes(context),
+                backgroundColor: const Color(0xFF2E6AD4),
+                child: const Icon(Icons.add, color: Colors.white, size: 28),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildHeaderPesquisa(bool isDark, Color cardColor) {
+    return Container(
+      key: const ValueKey('header_pesquisa'),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: BarraPesquisa(
+        corFundo: isDark ? const Color(0xFF2C2C2E) : cardColor,
+        isDark: isDark,
+        comSombra: true,
+        onChanged: (val) {
+          setState(() {
+            _termoBusca = val;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildContextualBar(DocumentosProvider provider) {
+    return Container(
+      key: const ValueKey('header_selecao'),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 48,
+      decoration: BoxDecoration(
+          color: const Color(0xFF1A3A6B),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+                color: const Color(0xFF1A3A6B).withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4))
+          ]),
+      child: Row(
+        children: [
+          IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 20),
+              onPressed: () {
+                setState(() {
+                  _selecionados.clear();
+                });
+              }),
+          Text('${_selecionados.length} selecionados',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14)),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.visibility_off,
+                color: Colors.white70, size: 20),
+            tooltip: 'Ocultar documento',
+            onPressed: () {
+              provider.ocultarDocumentos(_selecionados);
+              setState(() {
+                _selecionados.clear();
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Documentos ocultados com sucesso.')),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Color(0xFFFF4B4B), size: 20),
+            onPressed: () {
+              // Em vez de excluir direto, abrimos o alerta
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Excluir Documentos',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  content: Text(
+                    'Tem certeza que deseja excluir ${_selecionados.length} documento(s)?\n\nIsso apagará os arquivos fisicamente do seu dispositivo e não poderá ser desfeito.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancelar',
+                          style: TextStyle(color: Colors.grey)),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        provider.removerDocumentos(_selecionados,
+                            excluirDoDispositivo: true);
+                        setState(() {
+                          _selecionados.clear();
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Arquivos excluídos com sucesso.')),
+                        );
+                      },
+                      child: const Text('Excluir',
+                          style: TextStyle(
+                              color: Color(0xFFFF4B4B),
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFerramentasRow(
+      DocumentosProvider provider, bool isDark, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          ActionChip(
+            label: const Row(children: [
+              Text('Tipos',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              SizedBox(width: 4),
+              Icon(Icons.keyboard_arrow_down, size: 16)
+            ]),
+            backgroundColor:
+                isDark ? const Color(0xFF2C2C2E) : Colors.grey[200],
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+            onPressed: _abrirFiltros,
+          ),
+          const Spacer(),
+          IconButton(
+              icon: Icon(
+                  provider.isGridView
+                      ? Icons.view_list_rounded
+                      : Icons.grid_view_rounded,
+                  color: Colors.grey[500],
+                  size: 22),
+              onPressed: () => provider.toggleLayout()),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.sort_rounded, color: Colors.grey[500], size: 22),
+            onSelected: (val) => provider.ordenarPor(val),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'hora', child: Text('Mais Recentes')),
+              const PopupMenuItem(value: 'az', child: Text('Nome (A - Z)')),
+              const PopupMenuItem(value: 'za', child: Text('Nome (Z - A)'))
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConteudo(List<Documento> docs, bool isGrid, Color cardColor,
+      Color textColor, bool isDark,
+      {String vaziaMsg = 'Nenhum arquivo encontrado.',
+      required IconData iconVazio}) {
+    if (docs.isEmpty) {
+      return Center(
+          child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(iconVazio,
+              size: 64, color: isDark ? Colors.grey[800] : Colors.grey[300]),
+          const SizedBox(height: 16),
+          Text(vaziaMsg,
+              style: TextStyle(color: Colors.grey[500], fontSize: 15)),
+        ],
+      ));
+    }
+    if (isGrid) {
+      return GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.82),
+        itemCount: docs.length,
+        itemBuilder: (context, index) => _buildCard(
+            docs[index], cardColor, textColor,
+            isGrid: true, isDark: isDark),
+      );
+    }
+    return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: docs.length,
+        itemBuilder: (context, index) => _buildCard(
+            docs[index], cardColor, textColor,
+            isGrid: false, isDark: isDark));
+  }
+
+  Widget _buildCard(Documento doc, Color cardColor, Color textColor,
+      {required bool isGrid, required bool isDark}) {
+    bool isSel = _selecionados.contains(doc.id);
+
+    return GestureDetector(
+      onLongPress: () {
+        setState(() {
+          _selecionados.add(doc.id);
+        });
+      },
+      onTap: () {
+        if (_selecionados.isNotEmpty) {
+          setState(() {
+            isSel ? _selecionados.remove(doc.id) : _selecionados.add(doc.id);
+          });
+        } else {
+          if (doc.caminho != null) OpenFilex.open(doc.caminho!);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: isGrid ? EdgeInsets.zero : const EdgeInsets.only(bottom: 12),
+        padding: isGrid
+            ? const EdgeInsets.all(12)
+            : const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+            color: isSel
+                ? const Color(0xFF2E6AD4).withValues(alpha: 0.08)
+                : cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: isSel
+                    ? const Color(0xFF2E6AD4)
+                    : (isDark ? Colors.grey[800]! : Colors.transparent),
+                width: isSel ? 2 : 1),
+            boxShadow: (!isDark && !isSel)
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2))
+                  ]
+                : []),
+        child: isGrid
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  MiniaturaDocumento(
+                      doc: doc, isDark: isDark, largura: 54, altura: 68),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(doc.nome,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: textColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                      GestureDetector(
+                        onTap: () => context
+                            .read<DocumentosProvider>()
+                            .alternarFavorito(doc.id),
+                        child: Icon(
+                          doc.favorito
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: doc.favorito ? Colors.amber : Colors.grey[400],
+                          size: 20,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(doc.tamanho,
+                        style:
+                            TextStyle(color: Colors.grey[500], fontSize: 12)),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  MiniaturaDocumento(
+                      doc: doc, isDark: isDark, largura: 48, altura: 60),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(doc.nome,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: textColor,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text('${doc.data} • ${doc.tamanho}',
+                            style: TextStyle(
+                                color: Colors.grey[500], fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          doc.favorito
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: doc.favorito ? Colors.amber : Colors.grey[400],
+                        ),
+                        onPressed: () => context
+                            .read<DocumentosProvider>()
+                            .alternarFavorito(doc.id),
+                      ),
+                      if (isSel)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8.0),
+                          child: Icon(Icons.check_circle,
+                              color: Color(0xFF2E6AD4)),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+
+============================================================
+ARQUIVO: .\lib\telas\tela_edicao.dart
+============================================================
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../provedores/documentos_provider.dart';
+
+class TelaEdicao extends StatelessWidget {
+  final String documentoId;
+  const TelaEdicao({super.key, required this.documentoId});
+
+  @override
+  Widget build(BuildContext context) {
+    final doc = context
+        .read<DocumentosProvider>()
+        .documentos
+        .firstWhere((d) => d.id == documentoId);
+    final isDark = context.watch<DocumentosProvider>().isDarkMode;
+
+    return Scaffold(
+      backgroundColor: isDark
+          ? const Color(0xFF121212)
+          : const Color(0xFF1E1E1E), // Fundo escuro focado na edição
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Editar: ${doc.nome}',
+            style: const TextStyle(color: Colors.white, fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Alterações guardadas.')));
+              Navigator.pop(context);
+            },
+            child: const Text('Concluir',
+                style: TextStyle(
+                    color: Color(0xFF00C48C), fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
+      body: Column(
+        children: [
+          // Área de Preview Central
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Hero(
+                  tag: 'preview_${doc.id}',
+                  child: doc.caminho != null &&
+                          ['jpg', 'png'].contains(doc.extensao)
+                      ? Image.file(File(doc.caminho!))
+                      : Container(
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.all(40),
+                          child: Icon(Icons.picture_as_pdf,
+                              size: 80, color: Colors.grey[300]),
+                        ),
+                ),
+              ),
+            ),
+          ),
+
+          // Barra de Ferramentas Inferior
+          Container(
+            height: 100,
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.black87,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              children: [
+                _buildFerramenta(Icons.auto_awesome, 'Filtros\n(Em breve)', () {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text(
+                          'A integração com OpenCV_Dart será feita aqui.')));
+                }),
+                _buildFerramenta(Icons.crop, 'Cortar', () {}),
+                _buildFerramenta(Icons.rotate_right, 'Rodar', () {}),
+                _buildFerramenta(Icons.library_add, 'Nova pág.', () {}),
+                _buildFerramenta(Icons.photo_library, 'Importar\nLote', () {}),
+                _buildFerramenta(Icons.delete_outline, 'Apagar', () {},
+                    color: const Color(0xFFFF4B4B)),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFerramenta(IconData icon, String label, VoidCallback onTap,
+      {Color color = Colors.white}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 8),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: color.withValues(alpha: 0.8), fontSize: 10)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+============================================================
+ARQUIVO: .\lib\telas\tela_ferramentas.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../provedores/documentos_provider.dart';
+
+class TelaFerramentas extends StatelessWidget {
+  const TelaFerramentas({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.watch<DocumentosProvider>().isDarkMode;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A3A6B);
+
+    return Scaffold(
+      backgroundColor:
+          isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        title: Text('Ferramentas',
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildCategoria(
+              'Digitalização e Melhoria',
+              [
+                _ToolItem(Icons.document_scanner, 'Escanear Documento',
+                    const Color(0xFF00C48C)),
+                _ToolItem(Icons.auto_awesome, 'Melhorar Imagem',
+                    const Color(0xFF2E6AD4)), // Preparação para OpenCV
+              ],
+              isDark),
+          const SizedBox(height: 24),
+          _buildCategoria(
+              'Conversão de Arquivos',
+              [
+                _ToolItem(Icons.description, 'PDF para Word',
+                    const Color(0xFF2E6AD4)),
+                _ToolItem(
+                    Icons.image, 'Imagem para PDF', const Color(0xFFFF4B4B)),
+                _ToolItem(Icons.table_chart, 'PDF para Excel',
+                    const Color(0xFF34C759)),
+                _ToolItem(
+                    Icons.slideshow, 'PDF para PPT', const Color(0xFFFF9500)),
+              ],
+              isDark),
+          const SizedBox(height: 32),
+
+          // Aviso de atualizações futuras
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[300]!)),
+            child: Row(
+              children: [
+                Icon(Icons.construction, color: Colors.grey[400], size: 32),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Importação e Edição em Lote',
+                          style: TextStyle(
+                              color: textColor, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                          'Estas e outras funcionalidades estarão disponíveis nas próximas atualizações do DocScanner.',
+                          style:
+                              TextStyle(color: Colors.grey[500], fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoria(String titulo, List<_ToolItem> tools, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(titulo,
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.grey[400] : Colors.grey[700])),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.8),
+          itemCount: tools.length,
+          itemBuilder: (context, index) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                      color: tools[index].color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Icon(tools[index].icon,
+                      color: tools[index].color, size: 26),
+                ),
+                const SizedBox(height: 8),
+                Text(tools[index].label,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color:
+                            isDark ? Colors.white70 : const Color(0xFF1A3A6B),
+                        height: 1.1)),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ToolItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  _ToolItem(this.icon, this.label, this.color);
+}
+
+
+============================================================
+ARQUIVO: .\lib\telas\tela_inicio.dart
+============================================================
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:google_mlkit_document_scanner/google_mlkit_document_scanner.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import '../provedores/documentos_provider.dart';
+import '../widgets/barra_pesquisa.dart';
+import '../widgets/miniatura_documento.dart';
+import 'tela_edicao.dart';
+
+class TelaInicio extends StatefulWidget {
+  final Function(int)? onNavigateTab;
+  const TelaInicio({super.key, this.onNavigateTab});
+  @override
+  State<TelaInicio> createState() => _TelaInicioState();
+}
+
+class _TelaInicioState extends State<TelaInicio> {
+  final Set<String> _selecionados = {};
+
+  Future<void> _iniciarEscaneamento(BuildContext context) async {
+    if (kIsWeb) return;
+    try {
+      DocumentScannerOptions options = DocumentScannerOptions(
+          documentFormats: {DocumentFormat.pdf},
+          mode: ScannerMode.full,
+          isGalleryImport: true);
+      final documentScanner = DocumentScanner(options: options);
+      DocumentScanningResult result = await documentScanner.scanDocument();
+
+      if (result.pdf != null) {
+        File file = File(result.pdf!.uri);
+        DateTime agora = DateTime.now();
+        int bytes = await file.length();
+        final novoDoc = Documento(
+          id: agora.millisecondsSinceEpoch.toString(),
+          nome: 'Scanner_${DateFormat('dd-MM-yyyy_HHmm').format(agora)}',
+          data: DateFormat('dd MMM yyyy').format(agora),
+          dataReal: agora,
+          tamanho: '${(bytes / 1024 / 1024).toStringAsFixed(2)} MB',
+          caminho: file.path,
+          extensao: 'pdf',
+          importadoManualmente: true,
+        );
+
+        if (context.mounted) {
+          context.read<DocumentosProvider>().adicionarDocumento(novoDoc);
+        }
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  void _toggleSelecao(String id) {
+    setState(() {
+      if (_selecionados.contains(id)) {
+        _selecionados.remove(id);
+      } else {
+        _selecionados.add(id);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<DocumentosProvider>();
+    final listaDocumentos = provider.documentos;
+    final isDark = provider.isDarkMode;
+    final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA);
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A3A6B);
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _selecionados.isNotEmpty
+                ? _buildContextualBar()
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    child: BarraPesquisa(
+                      corFundo: cardColor,
+                      isDark: isDark,
+                      readOnly: true, // É apenas um botão para levar à pesquisa real
+                      onTap: () {
+                        if (widget.onNavigateTab != null) {
+                          widget.onNavigateTab!(1); // Encaminha para Arquivos
+                        }
+                      },
+                    ),
+                  ),
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: _buildActionCarousel(context, isDark),
+                  ),
+                  ..._buildSliversRecentes(
+                      listaDocumentos, cardColor, textColor, isDark),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: _selecionados.isEmpty
+          ? FloatingActionButton(
+              onPressed: () => _iniciarEscaneamento(context),
+              backgroundColor: const Color(0xFF00C48C),
+              child:
+                  const Icon(Icons.camera_alt, color: Colors.white, size: 28),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildContextualBar() {
+    return Container(
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(color: const Color(0xFF1A3A6B), boxShadow: [
+        BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2))
+      ]),
+      child: Row(
+        children: [
+          IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _selecionados.clear();
+                });
+              }),
+          Text('${_selecionados.length} selecionado(s)',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
+          const Spacer(),
+          IconButton(
+              icon: const Icon(Icons.delete, color: Color(0xFFFF4B4B)),
+              onPressed: () {
+                context
+                    .read<DocumentosProvider>()
+                    .removerDocumentos(_selecionados);
+                setState(() {
+                  _selecionados.clear();
+                });
+              }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCarousel(BuildContext context, bool isDark) {
+    final items = [
+      _ActionItem(Icons.document_scanner, 'Digitalizar',
+          const Color(0xFF00C48C), () => _iniciarEscaneamento(context)),
+      _ActionItem(Icons.image, 'Importar', const Color(0xFF2E6AD4), () {
+        if (widget.onNavigateTab != null) {
+          widget.onNavigateTab!(1);
+        }
+      }),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 85,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (c, i) => _buildActionItem(items[i], isDark),
+              ),
+            ),
+          ),
+          Container(
+            height: 50,
+            width: 1,
+            color: isDark ? Colors.grey[800] : Colors.grey[300],
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+          GestureDetector(
+            onTap: () {
+              if (widget.onNavigateTab != null) {
+                widget.onNavigateTab!(2);
+              }
+            },
+            child: SizedBox(
+              width: 70,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2C2C2E) : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? Colors.transparent : Colors.grey[300]!,
+                        )),
+                    child: const Icon(Icons.dashboard_customize_rounded,
+                        color: Color(0xFFFF4B4B), size: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Ferramentas',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : const Color(0xFF1A3A6B)))
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(_ActionItem item, bool isDark) {
+    return GestureDetector(
+      onTap: item.onTap,
+      child: SizedBox(
+          width: 64,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                    color: item.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14)),
+                child: Icon(item.icon, color: item.color, size: 24)),
+            const SizedBox(height: 8),
+            Text(item.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : const Color(0xFF1A3A6B)))
+          ])),
+    );
+  }
+
+  List<Widget> _buildSliversRecentes(
+      List<Documento> recentes, Color cardColor, Color textColor, bool isDark) {
+    List<Widget> slivers = [];
+
+    slivers.add(
+      SliverToBoxAdapter(
+        child: Container(
+          margin: const EdgeInsets.only(top: 24),
+          padding: const EdgeInsets.only(top: 20, bottom: 8),
+          decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24))),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Recentes',
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: textColor)),
+                  GestureDetector(
+                      onTap: () {
+                        if (widget.onNavigateTab != null) {
+                          widget.onNavigateTab!(1);
+                        }
+                      },
+                      child: Row(children: [
+                        Text('Exibir tudo',
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey[500])),
+                        Icon(Icons.chevron_right,
+                            size: 16, color: Colors.grey[500])
+                      ]))
+                ]),
+          ),
+        ),
+      ),
+    );
+
+    if (recentes.isEmpty) {
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Container(
+            color: cardColor,
+            padding: const EdgeInsets.all(32),
+            child: Center(
+                child: Text('Nenhum documento recente.',
+                    style: TextStyle(color: Colors.grey[400]))),
+          ),
+        ),
+      );
+    } else {
+      slivers.add(
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _StickyCardDelegate(
+            height: 185.0,
+            backgroundColor: cardColor,
+            isDark: isDark,
+            child: Container(
+              alignment: Alignment.center,
+              child: _buildExpandedRecentCard(
+                  recentes[0], cardColor, textColor, isDark),
+            ),
+          ),
+        ),
+      );
+
+      int length = recentes.length > 10 ? 10 : recentes.length;
+      if (length > 1) {
+        slivers.add(
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return Container(
+                  color: cardColor,
+                  child: _buildStandardRecentTile(
+                      recentes[index + 1], textColor, isDark),
+                );
+              },
+              childCount: length - 1,
+            ),
+          ),
+        );
+      }
+
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Container(
+            color: cardColor,
+            padding: const EdgeInsets.only(
+                top: 24, bottom: 100, left: 16, right: 16),
+            child: Center(
+              child: Text(
+                'Para mais detalhes, vá para a aba de Arquivos ou clique em Exibir tudo.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[400],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return slivers;
+  }
+
+  Widget _buildExpandedRecentCard(
+      Documento doc, Color cardColor, Color textColor, bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        if (_selecionados.isNotEmpty) {
+          _toggleSelecao(doc.id);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: _selecionados.contains(doc.id)
+                ? const Color(0xFF2E6AD4).withValues(alpha: 0.1)
+                : cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: _selecionados.contains(doc.id)
+                    ? const Color(0xFF2E6AD4)
+                    : (isDark ? Colors.grey[800]! : Colors.grey[200]!))),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                MiniaturaDocumento(doc: doc, isDark: isDark, largura: 48, altura: 60),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(doc.nome,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: textColor)),
+                      const SizedBox(height: 4),
+                      Text('${doc.data}  |  ${doc.tamanho}',
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.grey[500]))
+                    ])),
+                GestureDetector(
+                    onTap: () => _toggleSelecao(doc.id),
+                    child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: Icon(
+                            _selecionados.contains(doc.id)
+                                ? Icons.check_box
+                                : Icons.check_box_outline_blank,
+                            color: _selecionados.contains(doc.id)
+                                ? const Color(0xFF2E6AD4)
+                                : Colors.grey[400],
+                            size: 24))),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                    child:
+                        _buildCardButton('Compartilhar', isDark, onTap: () {})),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: _buildCardButton('Editar', isDark, highlight: true,
+                        onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (c) => TelaEdicao(documentoId: doc.id)));
+                })),
+                const SizedBox(width: 8),
+                Expanded(
+                    child: _buildCardButton('Visualizar', isDark, onTap: () {
+                  if (doc.caminho != null) {
+                    OpenFilex.open(doc.caminho!);
+                  }
+                })),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStandardRecentTile(Documento doc, Color textColor, bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        if (_selecionados.isNotEmpty) {
+          _toggleSelecao(doc.id);
+        } else {
+          if (doc.caminho != null) OpenFilex.open(doc.caminho!);
+        }
+      },
+      child: Container(
+        color: _selecionados.contains(doc.id)
+            ? const Color(0xFF2E6AD4).withValues(alpha: 0.1)
+            : Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            MiniaturaDocumento(doc: doc, isDark: isDark, largura: 48, altura: 60),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(doc.nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: textColor)),
+                  const SizedBox(height: 4),
+                  Text('${doc.data}  |  ${doc.tamanho}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]))
+                ])),
+            GestureDetector(
+                onTap: () => _toggleSelecao(doc.id),
+                child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                        _selecionados.contains(doc.id)
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        color: _selecionados.contains(doc.id)
+                            ? const Color(0xFF2E6AD4)
+                            : Colors.grey[400],
+                        size: 24))),
+            const SizedBox(width: 4),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardButton(String text, bool isDark,
+      {bool highlight = false, VoidCallback? onTap}) {
+    return GestureDetector(
+        onTap: onTap,
+        child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+                color: highlight
+                    ? const Color(0xFF00C48C).withValues(alpha: 0.15)
+                    : (isDark ? const Color(0xFF2C2C2E) : Colors.grey[100]),
+                borderRadius: BorderRadius.circular(8)),
+            child: Center(
+                child: Text(text,
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight:
+                            highlight ? FontWeight.bold : FontWeight.w600,
+                        color: highlight
+                            ? const Color(0xFF00C48C)
+                            : (isDark
+                                ? Colors.grey[300]
+                                : Colors.grey[700]))))));
+  }
+}
+
+class _ActionItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  _ActionItem(this.icon, this.label, this.color, this.onTap);
+}
+
+class _StickyCardDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double height;
+  final Color backgroundColor;
+  final bool isDark;
+
+  _StickyCardDelegate({
+    required this.child,
+    required this.height,
+    required this.backgroundColor,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        boxShadow: overlapsContent
+            ? [
+                BoxShadow(
+                  color: isDark ? Colors.black45 : Colors.black.withOpacity(0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ]
+            : [],
+      ),
+      child: child,
+    );
+  }
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  bool shouldRebuild(covariant _StickyCardDelegate oldDelegate) {
+    return oldDelegate.child != child ||
+        oldDelegate.height != height ||
+        oldDelegate.backgroundColor != backgroundColor;
+  }
+}
+
+
+============================================================
+ARQUIVO: .\lib\telas\tela_mais.dart
+============================================================
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../provedores/documentos_provider.dart';
+
+class TelaMais extends StatelessWidget {
+  const TelaMais({super.key});
+
+  void _mostrarSobreApp(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sobre o DocScanner',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'O DocScanner é uma solução desenvolvida para simplificar a digitalização, gestão e edição de documentos.\n\n'
+          'Através do uso de algoritmos nativos e processamento em dispositivo, garantimos a privacidade e velocidade na conversão dos seus papéis em ficheiros PDF de alta qualidade.\n\n'
+          'Versão: 1.0.0-MVP',
+          style: TextStyle(height: 1.4),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Fechar')),
+        ],
+      ),
+    );
+  }
+
+  // Novo método: Confirmação antes de disparar a Revogação Ativa (Regra de Negócio 1)
+  void _confirmarRevogacao(BuildContext context, DocumentosProvider provider) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Revogar Acesso',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Ao desativar esta opção, todos os documentos que foram encontrados automaticamente pelo DocScanner serão removidos da sua lista.\n\n'
+          'Fique tranquilo: os seus arquivos originais no armazenamento do celular NÃO serão apagados. Deseja continuar?',
+          style: TextStyle(height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              provider.alternarPermissaoArquivos(
+                  false); // Dispara a limpeza no SQLite
+            },
+            child: const Text('Desativar',
+                style: TextStyle(
+                    color: Color(0xFFFF4B4B), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<DocumentosProvider>();
+    final isDark = provider.isDarkMode;
+    final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA);
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A3A6B);
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        backgroundColor: cardColor,
+        elevation: 0,
+        titleSpacing: 20,
+        title: Text('Mais',
+            style: TextStyle(
+                color: textColor, fontSize: 22, fontWeight: FontWeight.bold)),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildPerfilCard(),
+            const SizedBox(height: 20),
+
+            // Configurações e Acessos
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                    padding: EdgeInsets.only(left: 4, bottom: 10),
+                    child: Text('Configurações do Sistema',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF8E8E93),
+                            letterSpacing: 0.5))),
+                Container(
+                  decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Column(
+                    children: [
+                      // Toggle de Acesso aos Arquivos do Celular (Regra de Negócio Crítica)
+                      ListTile(
+                        leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                                color: const Color(0xFF34C759)
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.folder_special,
+                                color: Color(0xFF34C759), size: 20)),
+                        title: Text('Acesso Automático',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                                fontSize: 14)),
+                        subtitle: Text('Ler PDFs e Docs do dispositivo',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey[500])),
+                        trailing: Switch(
+                          activeColor: const Color(0xFF2E6AD4),
+                          value: provider.permissaoAcessoArquivos,
+                          onChanged: (val) {
+                            if (val) {
+                              // Se for ligar, pede a permissão normalmente
+                              provider.alternarPermissaoArquivos(true);
+                            } else {
+                              // Se for desligar, exige confirmação para evitar perdas acidentais
+                              _confirmarRevogacao(context, provider);
+                            }
+                          },
+                        ),
+                      ),
+                      Divider(
+                          height: 1,
+                          indent: 60,
+                          endIndent: 16,
+                          color: isDark ? Colors.grey[800] : Colors.grey[100]),
+                      // Switch do Modo Escuro
+                      ListTile(
+                        leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                                color: const Color(0xFFAF52DE)
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10)),
+                            child: const Icon(Icons.dark_mode_outlined,
+                                color: Color(0xFFAF52DE), size: 20)),
+                        title: Text('Modo Escuro',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                                fontSize: 14)),
+                        subtitle: Text('Alterar tema visual',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey[500])),
+                        trailing: Switch(
+                          activeColor: const Color(0xFF2E6AD4),
+                          value: provider.isDarkMode,
+                          onChanged: (val) => provider.toggleTheme(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+            Column(
+              children: [
+                const Divider(color: Colors.black12),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                        onPressed: () => _mostrarSobreApp(context),
+                        child: const Text('Sobre o App',
+                            style:
+                                TextStyle(color: Colors.grey, fontSize: 13))),
+                  ],
+                ),
+                const Text('DocScanner v1.0.0',
+                    style: TextStyle(color: Colors.grey, fontSize: 11)),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPerfilCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+            colors: [Color(0xFF1A3A6B), Color(0xFF2E6AD4)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(28)),
+              child: const Icon(Icons.person, color: Colors.white, size: 30)),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Olá, bem-vindo!',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text('DocScanner · Plano Gratuito',
+                    style: TextStyle(color: Colors.white70, fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+============================================================
+ARQUIVO: .\lib\widgets\barra_pesquisa.dart
+============================================================
+
+import 'package:flutter/material.dart';
+
+class BarraPesquisa extends StatelessWidget {
+  final Color corFundo;
+  final bool isDark;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onTap;
+  final bool readOnly;
+  final String hintText;
+  final bool comSombra;
+
+  const BarraPesquisa({
+    super.key,
+    required this.corFundo,
+    required this.isDark,
+    this.onChanged,
+    this.onTap,
+    this.readOnly = false,
+    this.hintText = 'Pesquisar...',
+    this.comSombra = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: corFundo,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: comSombra && !isDark
+            ? [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2))
+              ]
+            : [],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search, color: Colors.grey[400], size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              readOnly: readOnly,
+              onTap: onTap,
+              onChanged: onChanged,
+              style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF1A3A6B),
+                  fontSize: 15),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+============================================================
+ARQUIVO: .\lib\widgets\miniatura_documento.dart
+============================================================
+
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:pdfx/pdfx.dart';
+import '../provedores/documentos_provider.dart';
+
+class MiniaturaDocumento extends StatelessWidget {
+  final Documento doc;
+  final bool isDark;
+  final double largura;
+  final double altura;
+
+  const MiniaturaDocumento({
+    super.key,
+    required this.doc,
+    required this.isDark,
+    this.largura = 48,
+    this.altura = 60,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (['jpg', 'png', 'jpeg'].contains(doc.extensao) &&
+        doc.caminho != null &&
+        !kIsWeb) {
+      return ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Image.file(File(doc.caminho!),
+              width: largura,
+              height: altura,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.image)));
+    }
+
+    if (doc.extensao == 'pdf' && doc.caminho != null && !kIsWeb) {
+      return FutureBuilder<PdfDocument>(
+        future: PdfDocument.openFile(doc.caminho!),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return FutureBuilder<PdfPageImage?>(
+              future: snapshot.data!.getPage(1).then((page) =>
+                  page.render(width: page.width, height: page.height)),
+              builder: (ctx, snapImg) {
+                if (snapImg.hasData && snapImg.data != null) {
+                  return ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.memory(snapImg.data!.bytes,
+                          width: largura, height: altura, fit: BoxFit.cover));
+                }
+                return _fallbackIcon();
+              },
+            );
+          }
+          return _fallbackIcon();
+        },
+      );
+    }
+
+    return _fallbackIcon();
+  }
+
+  Widget _fallbackIcon() {
+    final isPdf = doc.extensao.toLowerCase() == 'pdf';
+    return Container(
+        width: largura,
+        height: altura,
+        decoration: BoxDecoration(
+            color: isPdf
+                ? const Color(0xFFFF4B4B).withValues(alpha: 0.1)
+                : (isDark ? const Color(0xFF2C2C2E) : Colors.grey[100]),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+                color: isDark ? Colors.transparent : Colors.grey[300]!)),
+        child: Center(
+            child: Icon(isPdf ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                color: isPdf ? const Color(0xFFFF4B4B) : Colors.grey[400],
+                size: 24)));
+  }
+}
+
+============================================================
+ARQUIVO: C:\xampp\htdocs\Ouvidoria-Online\DocScanner\android\app\src\main\AndroidManifest.xml
+============================================================
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:label="docscanner"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
+        
+        <activity
+            android:name="io.flutter.embedding.android.FlutterFragmentActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>

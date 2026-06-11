@@ -15,5 +15,60 @@ import io.flutter.embedding.engine.FlutterEngine;
 public final class GeneratedPluginRegistrant {
   private static final String TAG = "GeneratedPluginRegistrant";
   public static void registerWith(@NonNull FlutterEngine flutterEngine) {
+    try {
+      flutterEngine.getPlugins().add(new com.mr.flutter.plugin.filepicker.FilePickerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin file_picker, com.mr.flutter.plugin.filepicker.FilePickerPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin flutter_plugin_android_lifecycle, io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.google_mlkit_document_scanner.GoogleMlKitDocumentScannerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin google_mlkit_document_scanner, com.google_mlkit_document_scanner.GoogleMlKitDocumentScannerPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.github.dart_lang.jni.JniPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin jni, com.github.dart_lang.jni.JniPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.github.dart_lang.jni_flutter.JniFlutterPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin jni_flutter, com.github.dart_lang.jni_flutter.JniFlutterPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.localauth.LocalAuthPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin local_auth_android, io.flutter.plugins.localauth.LocalAuthPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.crazecoder.openfile.OpenFilePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin open_filex, com.crazecoder.openfile.OpenFilePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.scer.pdfx.PdfxPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin pdfx, io.scer.pdfx.PdfxPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.baseflow.permissionhandler.PermissionHandlerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin permission_handler_android, com.baseflow.permissionhandler.PermissionHandlerPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new dev.fluttercommunity.plus.share.SharePlusPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin share_plus, dev.fluttercommunity.plus.share.SharePlusPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.tekartik.sqflite.SqflitePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin sqflite_android, com.tekartik.sqflite.SqflitePlugin", e);
+    }
   }
 }

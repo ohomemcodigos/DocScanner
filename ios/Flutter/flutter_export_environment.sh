@@ -1,7 +1,8 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
-export "FLUTTER_ROOT=C:\flutter\flutter"
-export "FLUTTER_APPLICATION_PATH=C:\xampp\htdocs\Ouvidoria-Online\DocScanner"
+export "FLUTTER_ROOT=C:\Users\Guilherme\flutter"
+export "FLUTTER_APPLICATION_PATH=C:\teste"
+export "FLUTTER_FRAMEWORK_SWIFT_PACKAGE_PATH=C:\teste\ios\Flutter\ephemeral\Packages\.packages\FlutterFramework"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=lib\main.dart"
 export "FLUTTER_BUILD_DIR=build"

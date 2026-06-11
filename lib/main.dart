@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'provedores/documentos_provider.dart';
+import 'provedores/usuario_provider.dart';
 import 'telas/tela_inicio.dart';
 import 'telas/tela_documentos.dart';
 import 'telas/tela_ferramentas.dart';
-import 'telas/tela_mais.dart';
+import 'telas/tela_perfil.dart';
 
 void main() {
-  // 1. Esta linha é OBRIGATÓRIA quando usamos pacotes nativos (Câmera, PDF, Permissões, Biometria).
+  // Linha OBRIGATÓRIA quando se usa pacotes nativos (Câmera, PDF, Permissões, Biometria).
   // Ela garante que o motor do Flutter "acorde" antes da interface.
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(
-    ChangeNotifierProvider(
-      // 2. Removido o varrer automático da inicialização.
-      // Agora o app abre "vazio", respeitando a privacidade.
-      // Ele só lerá o celular quando o usuário ativar na aba "Mais".
-      create: (context) => DocumentosProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => DocumentosProvider()),
+        ChangeNotifierProvider(create: (context) => UsuarioProvider()),
+      ],
       child: const DocScannerApp(),
     ),
   );
@@ -70,7 +71,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
     }),
     const TelaDocumentos(),
     const TelaFerramentas(),
-    const TelaMais(),
+    const TelaPerfil(),
   ];
 
   @override
@@ -123,9 +124,10 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
                 activeIcon: Icon(Icons.grid_view_rounded),
                 label: 'Ferramentas'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.more_horiz),
-                activeIcon: Icon(Icons.more_horiz),
-                label: 'Mais'),
+                // Ícones atualizados para representar a tela de Perfil
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Perfil'),
           ],
         ),
       ),

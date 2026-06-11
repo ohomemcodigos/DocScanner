@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:permission_handler/permission_handler.dart';
 import '../banco/database_helper.dart';
 
+
 class Documento {
   final String id;
   String nome;
@@ -29,7 +30,7 @@ class Documento {
     this.favorito = false,
     this.importadoManualmente = true,
     required this.dataReal,
-    this.oculto = false, // Valor padrão deve ser falso
+    this.oculto = false, 
   });
 }
 
@@ -47,33 +48,53 @@ class DocumentosProvider extends ChangeNotifier {
   bool get isGridView => _isGridView;
   bool get permissaoAcessoArquivos => _permissaoAcessoArquivos;
 
-  // O getter agora filtra o que a interface consegue "enxergar", ignorando os ocultos
-  List<Documento> get documentos =>
-      _documentos.where((d) => !d.oculto).toList();
+  List<Documento> get documentos => _documentos.where((d) => !d.oculto).toList();
 
   Future<void> _inicializarDados() async {
     if (!kIsWeb) {
       final docsSalvos = await DatabaseHelper.instance.lerTodosDocumentos();
 
-      // Revogação Passiva: Verifica se o usuário tirou a permissão nas Configurações do Android
       _permissaoAcessoArquivos = await Permission.storage.isGranted ||
           await Permission.manageExternalStorage.isGranted;
 
       if (!_permissaoAcessoArquivos) {
-        // Se o app iniciar sem permissão, carrega apenas os que tiveram input explícito (manuais)
         _documentos.addAll(docsSalvos.where((d) => d.importadoManualmente));
-
-        // Limpa do banco de dados qualquer arquivo que tenha ficado órfão da varredura anterior
-        final autoDocs =
-            docsSalvos.where((d) => !d.importadoManualmente).toList();
+        
+        final autoDocs = docsSalvos.where((d) => !d.importadoManualmente).toList();
         for (var doc in autoDocs) {
           await DatabaseHelper.instance.deletarDocumento(doc.id);
         }
       } else {
         _documentos.addAll(docsSalvos);
+        
+        // --- CORREÇÃO DA SINCRONIZAÇÃO FRIA AQUI ---
+        // Varre silenciosamente os novos downloads sempre que o app abrir
+        varrerDocumentosLocais(); 
       }
 
+      // Garante que a ordem inicial seja sempre a mais recente
+      _documentos.sort((a, b) => b.dataReal.compareTo(a.dataReal));
       notifyListeners();
+    }
+  }
+
+  Future<void> recarregarDados() async {
+    if (kIsWeb) return;
+    try {
+      final docsSalvos = await DatabaseHelper.instance.lerTodosDocumentos();
+      
+      _documentos.clear();
+      
+      if (!_permissaoAcessoArquivos) {
+        _documentos.addAll(docsSalvos.where((d) => d.importadoManualmente));
+      } else {
+        _documentos.addAll(docsSalvos);
+      }
+      
+      _documentos.sort((a, b) => b.dataReal.compareTo(a.dataReal));
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Erro ao recarregar dados: $e");
     }
   }
 
@@ -104,17 +125,14 @@ class DocumentosProvider extends ChangeNotifier {
       }
     } else {
       _permissaoAcessoArquivos = false;
-
-      // Revogação Ativa: Usuário renegou o acesso no APP. Esquecer tudo que não foi manual.
+      
       final idsParaRemover = _documentos
           .where((doc) => !doc.importadoManualmente)
           .map((doc) => doc.id)
           .toSet();
 
-      // Remove da interface
       _documentos.removeWhere((doc) => !doc.importadoManualmente);
 
-      // Remove do banco de dados para proteger a privacidade
       for (var id in idsParaRemover) {
         await DatabaseHelper.instance.deletarDocumento(id);
       }
@@ -122,10 +140,14 @@ class DocumentosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Novo método: Ocultar
+  // ==========================================================================
+  // CORREÇÃO: Clonagem da lista para proteger contra "Clear" instantâneo da UI
+  // ==========================================================================
   Future<void> ocultarDocumentos(Set<String> ids) async {
+    final Set<String> idsSeguros = Set.from(ids); // CLONE DE SEGURANÇA
+    
     for (var doc in _documentos) {
-      if (ids.contains(doc.id)) {
+      if (idsSeguros.contains(doc.id)) {
         doc.oculto = true;
         if (!kIsWeb) {
           await DatabaseHelper.instance.atualizarOculto(doc.id, true);
@@ -136,68 +158,76 @@ class DocumentosProvider extends ChangeNotifier {
   }
 
   Future<void> adicionarDocumento(Documento doc) async {
-    // Restaurar Ocultos: Verifica se este caminho já existe no nosso ecossistema
-    final index = _documentos
-        .indexWhere((d) => d.caminho != null && d.caminho == doc.caminho);
+    final index = _documentos.indexWhere((d) => d.caminho != null && d.caminho == doc.caminho);
 
     if (index != -1) {
-      // O ficheiro já existe. Se estava oculto, o utilizador está a pedir para o trazer de volta à vida.
       if (_documentos[index].oculto) {
         _documentos[index].oculto = false;
         _documentos[index].importadoManualmente = true;
         notifyListeners();
+        
         if (!kIsWeb) {
-          await DatabaseHelper.instance
-              .atualizarOculto(_documentos[index].id, false);
+          await DatabaseHelper.instance.atualizarOculto(_documentos[index].id, false);
         }
       }
-      return; // Previne que ficheiros duplicados entrem na lista
+      return;
     }
 
     _documentos.insert(0, doc);
     notifyListeners();
-
+    
     if (!kIsWeb) {
       await DatabaseHelper.instance.inserirDocumento(doc);
     }
   }
 
-  Future<void> removerDocumentos(Set<String> ids,
-      {bool excluirDoDispositivo = false}) async {
+  // ==========================================================================
+  // CORREÇÃO: Clonagem da lista na Exclusão
+  // ==========================================================================
+  Future<void> removerDocumentos(Set<String> ids, {bool excluirDoDispositivo = false}) async {
+    final Set<String> idsSeguros = Set.from(ids); // CLONE DE SEGURANÇA
+
     if (!kIsWeb && excluirDoDispositivo) {
-      for (var id in ids) {
-        final doc = _documentos.firstWhere((d) => d.id == id);
-        if (doc.caminho != null) {
-          try {
-            final file = File(doc.caminho!);
-            if (await file.exists()) {
-              await file.delete(); // Deleta o arquivo físico do celular
+      for (var id in idsSeguros) {
+        try {
+          final index = _documentos.indexWhere((d) => d.id == id);
+          if (index != -1) {
+            final doc = _documentos[index];
+            if (doc.caminho != null) {
+              final file = File(doc.caminho!);
+              if (await file.exists()) {
+                await file.delete(); 
+              }
             }
-          } catch (e) {
-            debugPrint("Erro ao excluir arquivo físico: $e");
           }
+        } catch (e) {
+          debugPrint("Erro ao excluir arquivo físico: $e");
         }
       }
     }
 
-    // Remove da interface
-    _documentos.removeWhere((doc) => ids.contains(doc.id));
+    _documentos.removeWhere((doc) => idsSeguros.contains(doc.id));
     notifyListeners();
 
-    // Remove do banco de dados SQLite
     if (!kIsWeb) {
-      for (var id in ids) {
-        await DatabaseHelper.instance.deletarDocumento(id);
+      for (var id in idsSeguros) {
+        try {
+          await DatabaseHelper.instance.deletarDocumento(id);
+        } catch (e) {
+          debugPrint("Erro no banco de dados ao excluir: $e");
+        }
       }
+      await recarregarDados();
     }
   }
 
   Future<void> renomearDocumento(String id, String novoNome) async {
     final index = _documentos.indexWhere((doc) => doc.id == id);
+
     if (index != -1) {
       _documentos[index].nome = novoNome;
       notifyListeners();
-
+      
       if (!kIsWeb) {
         await DatabaseHelper.instance.atualizarNome(id, novoNome);
       }
@@ -206,13 +236,13 @@ class DocumentosProvider extends ChangeNotifier {
 
   Future<void> alternarFavorito(String id) async {
     final index = _documentos.indexWhere((doc) => doc.id == id);
+
     if (index != -1) {
       _documentos[index].favorito = !_documentos[index].favorito;
       notifyListeners();
-
+      
       if (!kIsWeb) {
-        await DatabaseHelper.instance
-            .atualizarFavorito(id, _documentos[index].favorito);
+        await DatabaseHelper.instance.atualizarFavorito(id, _documentos[index].favorito);
       }
     }
   }
@@ -221,15 +251,16 @@ class DocumentosProvider extends ChangeNotifier {
     if (criterio == 'hora') {
       _documentos.sort((a, b) => b.dataReal.compareTo(a.dataReal));
     } else if (criterio == 'az') {
-      _documentos
-          .sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+      _documentos.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
     } else if (criterio == 'za') {
-      _documentos
-          .sort((a, b) => b.nome.toLowerCase().compareTo(a.nome.toLowerCase()));
+      _documentos.sort((a, b) => b.nome.toLowerCase().compareTo(a.nome.toLowerCase()));
     }
     notifyListeners();
   }
 
+  // ==========================================================================
+  // CORREÇÃO: Varredura profunda (Subpastas) e inteligente
+  // ==========================================================================
   Future<void> varrerDocumentosLocais() async {
     if (kIsWeb) return;
 
@@ -238,17 +269,21 @@ class DocumentosProvider extends ChangeNotifier {
       Directory('/storage/emulated/0/Documents'),
     ];
 
+    bool encontrouNovo = false;
+
     for (var pasta in pastas) {
       if (pasta.existsSync()) {
         try {
-          var arquivos = pasta.listSync(recursive: false);
+          // recursive: true permite achar PDFs escondidos em subpastas como 'Telegram'
+          var arquivos = pasta.listSync(recursive: true, followLinks: false);
+          
           for (var arquivo in arquivos) {
             if (arquivo is File) {
               String extensao = arquivo.path.split('.').last.toLowerCase();
 
-              // Filtro Blindado: Apenas documentos válidos passam aqui. Mídias são ignoradas.
-              if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']
-                  .contains(extensao)) {
+              if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'].contains(extensao)) {
+                
+                // Evita duplicados verificando o caminho
                 if (!_documentos.any((d) => d.caminho == arquivo.path)) {
                   int bytes = arquivo.lengthSync();
                   DateTime dataModificacao = arquivo.lastModifiedSync();
@@ -256,28 +291,31 @@ class DocumentosProvider extends ChangeNotifier {
                   final novoDoc = Documento(
                     id: arquivo.path,
                     nome: arquivo.path.split('/').last,
-                    data:
-                        '${dataModificacao.day.toString().padLeft(2, '0')}/${dataModificacao.month.toString().padLeft(2, '0')}/${dataModificacao.year}',
+                    data: '${dataModificacao.day.toString().padLeft(2, '0')}/${dataModificacao.month.toString().padLeft(2, '0')}/${dataModificacao.year}',
                     dataReal: dataModificacao,
                     tamanho: '${(bytes / 1024 / 1024).toStringAsFixed(2)} MB',
                     caminho: arquivo.path,
                     extensao: extensao,
-                    importadoManualmente:
-                        false, // Flag que indica varredura automática
+                    importadoManualmente: false, 
                     oculto: false,
                   );
 
                   _documentos.add(novoDoc);
                   await DatabaseHelper.instance.inserirDocumento(novoDoc);
+                  encontrouNovo = true;
                 }
               }
             }
           }
         } catch (e) {
-          debugPrint("Erro ao ler pasta: $e");
+          // Proteção contra falhas em pastas bloqueadas pelo Android
+          debugPrint("Erro ao ler pasta ou subpasta: $e");
         }
       }
     }
-    ordenarPor('hora');
+
+    if (encontrouNovo) {
+      ordenarPor('hora');
+    }
   }
 }

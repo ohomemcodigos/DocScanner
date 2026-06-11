@@ -10,6 +10,8 @@ import '../provedores/documentos_provider.dart';
 import '../widgets/barra_pesquisa.dart';
 import '../widgets/miniatura_documento.dart';
 import 'package:share_plus/share_plus.dart';
+import 'tela_visualizador.dart';
+import 'tela_edicao.dart';
 
 class TelaDocumentos extends StatefulWidget {
   const TelaDocumentos({super.key});
@@ -33,15 +35,13 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
-        isScrollControlled:
-            true, // Permite que o menu se adapte ao tamanho da tela
+        isScrollControlled: true, 
         builder: (context) {
           return StatefulBuilder(
               builder: (BuildContext context, StateSetter setModalState) {
             bool todosAtivos = _filtros.values.every((v) => v);
             final isDark = context.read<DocumentosProvider>().isDarkMode;
 
-            // SUBSTITUÍDO: Usamos Material em vez de Container para o Ripple Effect funcionar
             return Material(
               color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               borderRadius:
@@ -49,7 +49,6 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
                 child: SingleChildScrollView(
-                  // EVITA O OVERFLOW DE 38 PIXELS
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,18 +107,16 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
     showModalBottomSheet(
         context: context,
         backgroundColor: Colors.transparent,
-        isScrollControlled: true, // Permite adaptação do menu
+        isScrollControlled: true, 
         builder: (context) {
           final isDark = context.read<DocumentosProvider>().isDarkMode;
 
-          // SUBSTITUÍDO: Usamos Material em vez de Container aqui também
           return Material(
             color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               child: SingleChildScrollView(
-                // EVITA OVERFLOW
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -262,7 +259,6 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Cabeçalho Dinâmico (Muda suavemente entre Pesquisa e Ações de Seleção)
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 transitionBuilder: (Widget child, Animation<double> animation) {
@@ -273,10 +269,8 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                     : _buildHeaderPesquisa(isDark, cardColor),
               ),
 
-              // 2. Barra de Ferramentas (Filtros, Grid/List, Ordernar)
               _buildFerramentasRow(provider, isDark, textColor),
 
-              // 3. Abas (Tabs) Elegantes
               Container(
                 decoration: BoxDecoration(
                     border: Border(
@@ -300,7 +294,6 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                 ),
               ),
 
-              // 4. Conteúdo (A Lista/Grelha)
               Expanded(
                 child: TabBarView(
                   children: [
@@ -323,6 +316,7 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
         ),
         floatingActionButton: _selecionados.isEmpty
             ? FloatingActionButton(
+                heroTag: 'btn_add_docs', // CORREÇÃO: Hero Tag Adicionada
                 onPressed: () => _abrirModalOpcoes(context),
                 backgroundColor: const Color(0xFF2E6AD4),
                 child: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -350,10 +344,20 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
   }
 
   Widget _buildContextualBar(DocumentosProvider provider) {
+    bool podeEditar = false;
+    if (_selecionados.length == 1) {
+      try {
+        final doc = provider.documentos.firstWhere((d) => d.id == _selecionados.first);
+        if (['pdf', 'jpg', 'jpeg', 'png'].contains(doc.extensao.toLowerCase())) {
+          podeEditar = true;
+        }
+      } catch (_) {}
+    }
+
     return Container(
       key: const ValueKey('header_selecao'),
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 4), // CORREÇÃO: Margem interna reduzida
       height: 48,
       decoration: BoxDecoration(
           color: const Color(0xFF1A3A6B),
@@ -366,21 +370,38 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
           ]),
       child: Row(
         children: [
+          // CORREÇÃO: Padding e Contraints zerados para apertar os ícones
           IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 20),
+              padding: EdgeInsets.zero, constraints: const BoxConstraints(),
+              icon: const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.close, color: Colors.white, size: 20)),
               onPressed: () {
                 setState(() {
                   _selecionados.clear();
                 });
               }),
-          Text('${_selecionados.length} selecionados',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14)),
-          const Spacer(),
+          const SizedBox(width: 4),
+          // CORREÇÃO: Envolver o texto em Expanded e remover Spacer
+          Expanded(
+            child: Text(
+              '${_selecionados.length} selecionados',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (podeEditar)
+            IconButton(
+              padding: EdgeInsets.zero, constraints: const BoxConstraints(),
+              icon: const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.edit, color: Colors.white, size: 20)),
+              tooltip: 'Editar',
+              onPressed: () {
+                final docId = _selecionados.first;
+                setState(() => _selecionados.clear());
+                Navigator.push(context, MaterialPageRoute(builder: (c) => TelaEdicao(documentoId: docId)));
+              },
+            ),
           IconButton(
-            icon: const Icon(Icons.share, color: Colors.white, size: 20),
+            padding: EdgeInsets.zero, constraints: const BoxConstraints(),
+            icon: const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.share, color: Colors.white, size: 20)),
             onPressed: () async {
               final docs = provider.documentos.where((d) => _selecionados.contains(d.id) && d.caminho != null).toList();
               if (docs.isNotEmpty) {
@@ -390,8 +411,8 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.visibility_off,
-                color: Colors.white70, size: 20),
+            padding: EdgeInsets.zero, constraints: const BoxConstraints(),
+            icon: const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.visibility_off, color: Colors.white70, size: 20)),
             tooltip: 'Ocultar documento',
             onPressed: () {
               provider.ocultarDocumentos(_selecionados);
@@ -405,9 +426,9 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.delete, color: Color(0xFFFF4B4B), size: 20),
+            padding: EdgeInsets.zero, constraints: const BoxConstraints(),
+            icon: const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.delete, color: Color(0xFFFF4B4B), size: 20)),
             onPressed: () {
-              // Em vez de excluir direto, abrimos o alerta
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -537,6 +558,7 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
   Widget _buildCard(Documento doc, Color cardColor, Color textColor,
       {required bool isGrid, required bool isDark}) {
     bool isSel = _selecionados.contains(doc.id);
+    bool editavel = ['pdf', 'jpg', 'jpeg', 'png'].contains(doc.extensao.toLowerCase());
 
     return GestureDetector(
       onLongPress: () {
@@ -550,7 +572,16 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
             isSel ? _selecionados.remove(doc.id) : _selecionados.add(doc.id);
           });
         } else {
-          if (doc.caminho != null) OpenFilex.open(doc.caminho!);
+          if (doc.caminho != null) {
+            if (doc.extensao.toLowerCase() == 'pdf') {
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (c) => TelaVisualizador(documento: doc))
+              );
+            } else {
+              OpenFilex.open(doc.caminho!);
+            }
+          }
         }
       },
       child: AnimatedContainer(
@@ -595,6 +626,14 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600)),
                       ),
+                      if (editavel && !isSel)
+                        GestureDetector(
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => TelaEdicao(documentoId: doc.id))),
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 6.0),
+                            child: Icon(Icons.edit_outlined, color: Colors.grey[400], size: 18),
+                          ),
+                        ),
                       GestureDetector(
                         onTap: () => context
                             .read<DocumentosProvider>()
@@ -644,6 +683,12 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (editavel && !isSel)
+                        IconButton(
+                          icon: Icon(Icons.edit_outlined, color: Colors.grey[400], size: 22),
+                          tooltip: 'Editar',
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => TelaEdicao(documentoId: doc.id))),
+                        ),
                       IconButton(
                         icon: Icon(
                           doc.favorito

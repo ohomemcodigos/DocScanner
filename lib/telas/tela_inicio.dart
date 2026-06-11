@@ -10,6 +10,7 @@ import '../widgets/barra_pesquisa.dart';
 import '../widgets/miniatura_documento.dart';
 import 'tela_edicao.dart';
 import 'package:share_plus/share_plus.dart';
+import 'tela_visualizador.dart';
 
 class TelaInicio extends StatefulWidget {
   final Function(int)? onNavigateTab;
@@ -86,10 +87,10 @@ class _TelaInicioState extends State<TelaInicio> {
                     child: BarraPesquisa(
                       corFundo: cardColor,
                       isDark: isDark,
-                      readOnly: true, // É apenas um botão para levar à pesquisa real
+                      readOnly: true, 
                       onTap: () {
                         if (widget.onNavigateTab != null) {
-                          widget.onNavigateTab!(1); // Encaminha para Arquivos
+                          widget.onNavigateTab!(1);
                         }
                       },
                     ),
@@ -110,6 +111,7 @@ class _TelaInicioState extends State<TelaInicio> {
       ),
       floatingActionButton: _selecionados.isEmpty
           ? FloatingActionButton(
+              heroTag: 'btn_camera_inicio',
               onPressed: () => _iniciarEscaneamento(context),
               backgroundColor: const Color(0xFF00C48C),
               child:
@@ -139,19 +141,60 @@ class _TelaInicioState extends State<TelaInicio> {
                   _selecionados.clear();
                 });
               }),
-          Text('${_selecionados.length} selecionado(s)',
-              style: const TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.bold)),
-          const Spacer(),
+          // CORREÇÃO: Envolver o texto em Expanded e remover Spacer
+          Expanded(
+            child: Text(
+              '${_selecionados.length} selecionado(s)',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            onPressed: () async {
+              final docs = context.read<DocumentosProvider>().documentos.where((d) => _selecionados.contains(d.id) && d.caminho != null).toList();
+              if (docs.isNotEmpty) {
+                final arquivos = docs.map((d) => XFile(d.caminho!)).toList();
+                await SharePlus.instance.share(ShareParams(files: arquivos));
+              }
+            },
+          ),
           IconButton(
               icon: const Icon(Icons.delete, color: Color(0xFFFF4B4B)),
               onPressed: () {
-                context
-                    .read<DocumentosProvider>()
-                    .removerDocumentos(_selecionados);
-                setState(() {
-                  _selecionados.clear();
-                });
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Excluir Documentos',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    content: Text(
+                      'Tem certeza que deseja excluir ${_selecionados.length} documento(s)?\n\nIsso apagará os arquivos fisicamente do seu dispositivo e não poderá ser desfeito.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancelar',
+                            style: TextStyle(color: Colors.grey)),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          context.read<DocumentosProvider>().removerDocumentos(_selecionados, excluirDoDispositivo: true);
+                          setState(() {
+                            _selecionados.clear();
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Arquivos excluídos com sucesso.')),
+                          );
+                        },
+                        child: const Text('Excluir',
+                            style: TextStyle(
+                                color: Color(0xFFFF4B4B),
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
               }),
         ],
       ),
@@ -435,7 +478,8 @@ class _TelaInicioState extends State<TelaInicio> {
                     child: _buildCardButton('Compartilhar', isDark, onTap: () async {
                   if (doc.caminho != null) {
                     final arquivo = XFile(doc.caminho!);
-                    await SharePlus.instance.share(ShareParams(files: [arquivo], text: doc.nome));                  }
+                    await SharePlus.instance.share(ShareParams(files: [arquivo], text: doc.nome));
+                  }
                 })),
                 const SizedBox(width: 8),
                 Expanded(
@@ -450,7 +494,14 @@ class _TelaInicioState extends State<TelaInicio> {
                 Expanded(
                     child: _buildCardButton('Visualizar', isDark, onTap: () {
                   if (doc.caminho != null) {
-                    OpenFilex.open(doc.caminho!);
+                    if (doc.extensao.toLowerCase() == 'pdf') {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (c) => TelaVisualizador(documento: doc))
+                      );
+                    } else {
+                      OpenFilex.open(doc.caminho!);
+                    }
                   }
                 })),
               ],
@@ -467,7 +518,16 @@ class _TelaInicioState extends State<TelaInicio> {
         if (_selecionados.isNotEmpty) {
           _toggleSelecao(doc.id);
         } else {
-          if (doc.caminho != null) OpenFilex.open(doc.caminho!);
+          if (doc.caminho != null) {
+            if (doc.extensao.toLowerCase() == 'pdf') {
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (c) => TelaVisualizador(documento: doc))
+              );
+            } else {
+              OpenFilex.open(doc.caminho!);
+            }
+          }
         }
       },
       child: Container(
